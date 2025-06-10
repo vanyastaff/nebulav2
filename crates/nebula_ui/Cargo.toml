@@ -1,0 +1,22 @@
+[package]
+name = "nebula_ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+description.workspace = true
+keywords.workspace = true
+
+[dependencies]
+egui = {version = "0.31.1", features = []}
+serde = { workspace = true }
+
+[dev-dependencies]
+eframe = {version = "0.31.1", features = []}
+
+[lints]
+workspace = true
+
+[[example]]
+name = "text_parameter"

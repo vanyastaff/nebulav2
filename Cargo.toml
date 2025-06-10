@@ -1,0 +1,47 @@
+[workspace]
+members = [
+    "crates/nebula_core",
+    "crates/nebula_derive", "crates/nebula_ui",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vanyastaff/nebula"
+authors = ["Vanya Stafford <vanya.john.stafford@gmail.com>"]
+description = "Modern workflow automation engine built with Rust"
+keywords = ["workflow", "automation", "no-code", "engine"]
+
+[workspace.dependencies]
+# Async runtime
+tokio = { version = "1.45", features = ["full"] }
+async-trait = "0.1"
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Proc macros (for nebula_derive)
+syn = { version = "2.0", features = ["full"] }
+quote = "1.0"
+proc-macro2 = "1.0"
+
+# Error handling
+thiserror = "2.0.12"
+anyhow = "1.0"
+
+# Utilities
+uuid = { version = "1.17", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+all = "warn"
+pedantic = "warn"
+nursery = "warn"
