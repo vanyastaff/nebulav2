@@ -9,6 +9,13 @@ description.workspace = true
 keywords.workspace = true
 
 [dependencies]
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = {version = "1.0.140", features = []}
+thiserror = "2.0.12"
+derive_more = {version = "2.0.1", features = ["full"]}
+chrono = {version = "0.4.41", features = ["serde", "now"]}
+indexmap = {version = "2.0.0", features = ["serde"]}
+base64 = "0.22.1"
 
 [lints]
 workspace = true
