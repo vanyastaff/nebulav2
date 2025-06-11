@@ -1,3 +1,8 @@
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs)]
+
+mod backtrace;
 mod category;
 mod context;
 mod info;
@@ -5,13 +10,27 @@ mod macros;
 mod severity;
 mod traits;
 
+pub use backtrace::BacktraceExt;
 pub use category::ErrorCategory;
 pub use context::ErrorContext;
 pub use info::ErrorInfo;
 pub use severity::ErrorSeverity;
-pub use traits::{HasSeverity, ToErrorInfo};
+pub use traits::{ErrorChain, HasSeverity, AnyError, ToErrorInfo};
 
-// Re-export macros for convenience
-pub use macros::{error_context, error_info, impl_has_severity};
+#[doc(inline)]
+pub use crate::{error, error_context, impl_has_severity};
 
-pub type NebulaResult<T> = Result<T, Box<dyn HasSeverity + Send + Sync>>;
+/// Main result type with backtrace support
+pub type AnyResult<T, E = Box<dyn AnyError>> = Result<T, E>;
+
+/// Commonly used error constants
+pub mod consts {
+    use super::*;
+
+    pub const INTERNAL_ERROR: ErrorInfo = ErrorInfo {
+        severity: ErrorSeverity::Critical,
+        category: ErrorCategory::Internal,
+        message: std::borrow::Cow::Borrowed("Internal server error"),
+        context: ErrorContext::default(),
+    };
+}

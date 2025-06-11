@@ -47,24 +47,6 @@ impl ErrorCategory {
             ErrorCategory::Internal => "internal",
         }
     }
-
-    /// Returns a human-readable description
-    pub fn description(&self) -> &'static str {
-        match self {
-            ErrorCategory::General => "General system errors",
-            ErrorCategory::Parameter => "Parameter validation and configuration",
-            ErrorCategory::Workflow => "Workflow definition and orchestration",
-            ErrorCategory::Node => "Node operation and computation",
-            ErrorCategory::Action => "Action execution and processing",
-            ErrorCategory::Credential => "Credential management and validation",
-            ErrorCategory::Execution => "Runtime execution errors",
-            ErrorCategory::Auth => "Authentication and authorization",
-            ErrorCategory::Network => "Network communication and external services",
-            ErrorCategory::Storage => "File system and data storage",
-            ErrorCategory::Configuration => "System configuration and settings",
-            ErrorCategory::Internal => "Internal system errors",
-        }
-    }
 }
 
 impl std::fmt::Display for ErrorCategory {
