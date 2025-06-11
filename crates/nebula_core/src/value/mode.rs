@@ -34,3 +34,14 @@ impl Deref for ModeValue {
         &self.value
     }
 }
+
+impl Into<serde_json::Value> for ModeValue {
+    fn into(self) -> serde_json::Value {
+        serde_json::Value::Object(
+            serde_json::Map::from_iter([
+                ("mode".to_string(), self.mode.into()),
+                ("value".to_string(), self.value.into()),
+            ])
+        )
+    }
+}

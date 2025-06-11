@@ -7,6 +7,8 @@ pub mod number;
 pub mod object;
 pub mod string;
 mod mode;
+mod group;
+mod expression;
 
 pub use array::ArrayValue;
 pub use binary::BinaryValue;
@@ -16,6 +18,9 @@ pub use duration::DurationValue;
 pub use number::NumberValue;
 pub use object::ObjectValue;
 pub use string::StringValue;
+pub use mode::ModeValue;
+pub use group::GroupValue;
+pub use expression::ExpressionValue;
 
 use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
@@ -37,6 +42,12 @@ pub enum Value {
     DateTime(DateTimeValue),
     /// Time duration/interval
     Duration(DurationValue),
+    /// Group value (for grouping related parameters)
+    Group(GroupValue),
+    /// Mode value (for UI modes, e.g. select, text)
+    Mode(ModeValue),
+    /// Expression value (for dynamic expressions)
+    Expression(ExpressionValue),
     /// Null/empty value
     Null,
 }
@@ -161,6 +172,9 @@ impl Value {
             Value::DateTime(_) => "datetime",
             Value::Duration(_) => "duration",
             Value::Binary(_) => "binary",
+            Value::Group(_) => "group",
+            Value::Mode(_) => "mode",
+            Value::Expression(_) => "expression",
             Value::Null => "null",
         }
     }
@@ -173,6 +187,7 @@ impl Value {
             Value::Boolean(b) => b.to_string(),
             Value::DateTime(dt) => dt.to_string(),
             Value::Duration(d) => d.to_string(),
+            Value::Binary(b) => b.to_string(),
             Value::Null => "null".to_string(),
             _ => format!("[{}]", self.type_name()),
         }
@@ -190,6 +205,9 @@ impl Into<serde_json::Value> for Value {
             Value::DateTime(dt) => dt.into(),
             Value::Duration(d) => d.into(),
             Value::Binary(b) => b.into(),
+            Value::Group(g) => g.into(),
+            Value::Mode(m) => m.into(),
+            Value::Expression(e) => e.into(),
             Value::Null => serde_json::Value::Null,
         }
     }
