@@ -2,7 +2,8 @@ use downcast_rs::{impl_downcast, Downcast};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::any::Any;
 use std::fmt::Debug;
-use crate::parameter::ParameterKind;
+use crate::parameter::{ParameterError, ParameterKind, ParameterMetadata};
+use crate::parameter::value::ParameterValue;
 use crate::types::ParameterKey;
 
 pub trait TypedParameter {
@@ -26,7 +27,7 @@ pub trait Parameter: TypedParameter + DynClone + Downcast + Any + Debug + Send +
     }
 
     fn set_value(&mut self, value: ParameterValue) -> Result<(), ParameterError> {
-        if !self.type_id().is_editable() {
+        if !self.kind().is_editable() {
             return Err(ParameterError::NotEditable(self.key().clone()));
         }
         Ok(())

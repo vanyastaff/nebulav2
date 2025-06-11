@@ -10,6 +10,10 @@ use super::ParameterError;
     build_fn(error = "ParameterError")
 )]
 pub struct ParameterMetadata {
+    #[builder(
+        setter(strip_option, into),
+        field(ty = "String", build = "ParameterKey::new(self.key.clone())?")
+    )]
     pub key: ParameterKey,
     pub name: String,
     pub required: bool,

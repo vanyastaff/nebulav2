@@ -1,3 +1,5 @@
+// nebula_core/src/value/mod.rs
+
 pub mod array;
 pub mod binary;
 pub mod boolean;
@@ -6,10 +8,14 @@ pub mod duration;
 pub mod number;
 pub mod object;
 pub mod string;
-mod mode;
-mod group;
-mod expression;
+pub mod mode;
+pub mod group;
+pub mod expression;
+pub mod regex;
+pub mod error;
+mod comparison;
 
+pub use error::ValueError;
 pub use array::ArrayValue;
 pub use binary::BinaryValue;
 pub use boolean::BooleanValue;
@@ -21,10 +27,14 @@ pub use string::StringValue;
 pub use mode::ModeValue;
 pub use group::GroupValue;
 pub use expression::ExpressionValue;
+pub use regex::RegexValue;
+pub use comparison::{ValueComparison, ComparisonResult};
 
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
-#[serde(tag = "type", rename_all = "lowercase")]
+use strum::AsRefStr;
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, AsRefStr)]
+#[serde(tag = "kind", rename_all = "lowercase")]
 pub enum Value {
     /// Text string value
     String(StringValue),
@@ -38,177 +48,244 @@ pub enum Value {
     Array(ArrayValue),
     /// Key-value object
     Object(ObjectValue),
-    /// Date and time value (supports datetime, date-only, time-only)
+    /// Date and time value
     DateTime(DateTimeValue),
     /// Time duration/interval
     Duration(DurationValue),
     /// Group value (for grouping related parameters)
     Group(GroupValue),
-    /// Mode value (for UI modes, e.g. select, text)
+    /// Mode value (for UI modes)
     Mode(ModeValue),
     /// Expression value (for dynamic expressions)
     Expression(ExpressionValue),
+    /// Regular expression value
+    Regex(RegexValue),
     /// Null/empty value
+    #[default]
     Null,
 }
 
 impl Value {
-    // Проверки типов
+    pub fn is_group(&self) -> bool {
+        matches!(self, Self::Group(_))
+    }
+
+    pub fn is_regex(&self) -> bool {
+        matches!(self, Self::Regex(_))
+    }
+
+    // Type checks
     pub fn is_string(&self) -> bool {
-        matches!(self, Value::String(_))
+        matches!(self, Self::String(_))
     }
 
     pub fn is_number(&self) -> bool {
-        matches!(self, Value::Number(_))
+        matches!(self, Self::Number(_))
     }
 
     pub fn is_boolean(&self) -> bool {
-        matches!(self, Value::Boolean(_))
+        matches!(self, Self::Boolean(_))
     }
 
     pub fn is_array(&self) -> bool {
-        matches!(self, Value::Array(_))
+        matches!(self, Self::Array(_))
     }
 
     pub fn is_object(&self) -> bool {
-        matches!(self, Value::Object(_))
-    }
-
-    pub fn is_datetime(&self) -> bool {
-        matches!(self, Value::DateTime(_))
-    }
-
-    pub fn is_duration(&self) -> bool {
-        matches!(self, Value::Duration(_))
-    }
-
-    pub fn is_binary(&self) -> bool {
-        matches!(self, Value::Binary(_))
+        matches!(self, Self::Object(_))
     }
 
     pub fn is_null(&self) -> bool {
-        matches!(self, Value::Null)
+        matches!(self, Self::Null)
     }
 
-    // Извлечение значений как ссылки
+    // Value accessors
     pub fn as_string(&self) -> Option<&str> {
-        match self {
-            Value::String(s) => Some(s.as_ref()),
-            _ => None,
+        if let Self::String(s) = self {
+            Some(s.as_ref())
+        } else {
+            None
         }
     }
 
     pub fn as_number(&self) -> Option<&NumberValue> {
-        match self {
-            Value::Number(n) => Some(n),
-            _ => None,
+        if let Self::Number(n) = self {
+            Some(n)
+        } else {
+            None
         }
     }
 
     pub fn as_boolean(&self) -> Option<bool> {
-        match self {
-            Value::Boolean(b) => Some(**b), // если BooleanValue(bool)
-            _ => None,
+        if let Self::Boolean(b) = self {
+            Some(**b)
+        } else {
+            None
         }
     }
 
     pub fn as_array(&self) -> Option<&ArrayValue> {
-        match self {
-            Value::Array(a) => Some(a),
-            _ => None,
+        if let Self::Array(a) = self {
+            Some(a)
+        } else {
+            None
         }
     }
 
     pub fn as_object(&self) -> Option<&ObjectValue> {
-        match self {
-            Value::Object(o) => Some(o),
-            _ => None,
+        if let Self::Object(o) = self {
+            Some(o)
+        } else {
+            None
         }
     }
 
-    pub fn as_datetime(&self) -> Option<&DateTimeValue> {
-        match self {
-            Value::DateTime(dt) => Some(dt),
-            _ => None,
-        }
-    }
-
-    pub fn as_duration(&self) -> Option<&DurationValue> {
-        match self {
-            Value::Duration(d) => Some(d),
-            _ => None,
-        }
-    }
-
-    pub fn as_binary(&self) -> Option<&BinaryValue> {
-        match self {
-            Value::Binary(b) => Some(b),
-            _ => None,
-        }
-    }
-
-    // Mutable версии
+    // Mutable accessors
     pub fn as_array_mut(&mut self) -> Option<&mut ArrayValue> {
-        match self {
-            Value::Array(a) => Some(a),
-            _ => None,
+        if let Self::Array(a) = self {
+            Some(a)
+        } else {
+            None
         }
     }
 
     pub fn as_object_mut(&mut self) -> Option<&mut ObjectValue> {
-        match self {
-            Value::Object(o) => Some(o),
-            _ => None,
+        if let Self::Object(o) = self {
+            Some(o)
+        } else {
+            None
         }
     }
 
-    pub fn type_name(&self) -> &'static str {
-        match self {
-            Value::String(_) => "string",
-            Value::Number(_) => "number",
-            Value::Boolean(_) => "boolean",
-            Value::Array(_) => "array",
-            Value::Object(_) => "object",
-            Value::DateTime(_) => "datetime",
-            Value::Duration(_) => "duration",
-            Value::Binary(_) => "binary",
-            Value::Group(_) => "group",
-            Value::Mode(_) => "mode",
-            Value::Expression(_) => "expression",
-            Value::Null => "null",
-        }
+    pub fn as_group(&self) -> Option<&GroupValue> {
+        if let Self::Group(g) = self { Some(g) } else { None }
     }
 
-    // Конверсии с fallback
+    pub fn as_regex(&self) -> Option<&RegexValue> {
+        if let Self::Regex(r) = self { Some(r) } else { None }
+    }
+
+    pub fn try_as_string(&self) -> Result<&str, ValueError> {
+        self.as_string().ok_or_else(|| {
+            ValueError::type_conversion(self.type_name(), "string")
+        })
+    }
+
+    pub fn try_as_number(&self) -> Result<f64, ValueError> {
+        self.as_number()
+            .map(|n| n.as_f64())
+            .ok_or_else(|| {
+                ValueError::type_conversion(self.type_name(), "number")
+            })
+    }
+
+    pub fn try_as_boolean(&self) -> Result<bool, ValueError> {
+        self.as_boolean().ok_or_else(|| {
+            ValueError::type_conversion(self.type_name(), "boolean")
+        })
+    }
+
+    pub fn try_as_array(&self) -> Result<&ArrayValue, ValueError> {
+        self.as_array().ok_or_else(|| {
+            ValueError::type_conversion(self.type_name(), "array")
+        })
+    }
+
+    pub fn try_as_object(&self) -> Result<&ObjectValue, ValueError> {
+        self.as_object().ok_or_else(|| {
+            ValueError::type_conversion(self.type_name(), "object")
+        })
+    }
+
+    // Constructors
+    pub fn string(s: impl Into<StringValue>) -> Self {
+        Self::String(s.into())
+    }
+
+    pub fn number(n: impl Into<NumberValue>) -> Self {
+        Self::Number(n.into())
+    }
+
+    pub fn boolean(b: bool) -> Self {
+        Self::Boolean(b.into())
+    }
+
+    pub fn array(a: impl Into<ArrayValue>) -> Self {
+        Self::Array(a.into())
+    }
+
+    pub fn object(o: impl Into<ObjectValue>) -> Self {
+        Self::Object(o.into())
+    }
+
+    pub fn regex(pattern: impl AsRef<str>) -> Result<Self, ValueError> {
+        Ok(Self::Regex(RegexValue::new(pattern)?))
+    }
+
+    // Conversion to string
     pub fn to_string(&self) -> String {
         match self {
-            Value::String(s) => s.to_string(),
-            Value::Number(n) => n.to_string(),
-            Value::Boolean(b) => b.to_string(),
-            Value::DateTime(dt) => dt.to_string(),
-            Value::Duration(d) => d.to_string(),
-            Value::Binary(b) => b.to_string(),
-            Value::Null => "null".to_string(),
-            _ => format!("[{}]", self.type_name()),
+            Self::String(s) => s.to_string(),
+            Self::Number(n) => n.to_string(),
+            Self::Boolean(b) => b.to_string(),
+            Self::Array(a) => format!("[array with {} items]", a.len()),
+            Self::Object(o) => format!("[object with {} fields]", o.len()),
+            Self::DateTime(dt) => dt.to_string(),
+            Self::Duration(d) => d.to_string(),
+            Self::Group(g) => format!("[group: {}]", g.to_string()),
+            Self::Mode(m) => format!("[mode: {}]", m.to_string()),
+            Self::Expression(e) => format!("{{{{ {} }}}}", e.to_string()),
+            Self::Regex(r) => format!("/{}/", r.pattern()),
+            Self::Binary(_) => "[binary data]".to_string(),
+            Self::Null => "null".to_string(),
         }
+    }
+
+    /// Returns the type name as static string
+    pub fn type_name(&self) -> &'static str {
+        self.as_ref()
     }
 }
 
-impl Into<serde_json::Value> for Value {
-    fn into(self) -> serde_json::Value {
-        match self {
-            Value::String(s) => s.into(),
-            Value::Number(n) => n.into(),
-            Value::Boolean(b) => b.into(),
-            Value::Array(a) => a.into(),
-            Value::Object(o) => o.into(),
-            Value::DateTime(dt) => dt.into(),
-            Value::Duration(d) => d.into(),
-            Value::Binary(b) => b.into(),
-            Value::Group(g) => g.into(),
-            Value::Mode(m) => m.into(),
-            Value::Expression(e) => e.into(),
-            Value::Null => serde_json::Value::Null,
-        }
+// From implementations for basic types
+impl From<&str> for Value {
+    fn from(s: &str) -> Self {
+        Self::string(s)
+    }
+}
+
+impl From<String> for Value {
+    fn from(s: String) -> Self {
+        Self::string(s)
+    }
+}
+
+impl From<i32> for Value {
+    fn from(n: i32) -> Self {
+        Self::number(n)
+    }
+}
+
+impl From<i64> for Value {
+    fn from(n: i64) -> Self {
+        Self::number(n)
+    }
+}
+
+impl From<f64> for Value {
+    fn from(n: f64) -> Self {
+        Self::number(n)
+    }
+}
+
+impl From<bool> for Value {
+    fn from(b: bool) -> Self {
+        Self::boolean(b)
+    }
+}
+
+impl<T: Into<Value>> From<Vec<T>> for Value {
+    fn from(vec: Vec<T>) -> Self {
+        Self::array(vec.into_iter().map(Into::into).collect::<ArrayValue>())
     }
 }

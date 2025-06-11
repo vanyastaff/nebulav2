@@ -21,6 +21,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
+use std::hash::Hash;
 use std::marker::PhantomData;
 use std::sync::Arc;
 use thiserror::Error;
@@ -64,7 +65,7 @@ pub enum KeyParseError {
 /// # Type Parameters
 ///
 /// * `T` - A domain marker type that implements `KeyDomain`
-#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Key<T: KeyDomain>(Arc<str>, PhantomData<T>);
 
 // Manual Serialize/Deserialize implementation to handle Arc<str>
@@ -87,11 +88,13 @@ impl<'de, T: KeyDomain> Deserialize<'de> for Key<T> {
     }
 }
 
+
+
 /// Trait for key domain markers
 ///
 /// This trait defines the behavior for different key domains (parameter, action, node, etc.).
 /// Each domain can specify its own validation rules and normalization behavior.
-pub trait KeyDomain: 'static + Send + Sync + fmt::Debug {
+pub trait KeyDomain: 'static + Send + Sync + fmt::Debug + PartialEq + Eq + Hash + Ord + PartialOrd {
     /// Human-readable name for this domain
     const DOMAIN_NAME: &'static str;
 
@@ -136,42 +139,42 @@ pub trait KeyDomain: 'static + Send + Sync + fmt::Debug {
 ///
 /// Parameters represent configurable values for nodes and actions.
 /// Parameter keys cannot start with underscore (reserved for internal parameters).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ParameterDomain;
 
 /// Domain marker for action keys
 ///
 /// Actions represent operations that can be performed by nodes.
 /// Action keys must follow the `verb_noun` pattern (e.g., `send_request`, `validate_data`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ActionDomain;
 
 /// Domain marker for node keys
 ///
 /// Nodes represent processing units in the workflow.
 /// Node keys should be descriptive and unique within the workflow.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct NodeDomain;
 
 /// Domain marker for connection keys
 ///
 /// Connections represent data flow between nodes.
 /// Connection keys are typically auto-generated but can be customized.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct ConnectionDomain;
 
 /// Domain marker for workflow keys
 ///
 /// Workflows represent complete automation sequences.
 /// Workflow keys should be globally unique and descriptive.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct WorkflowDomain;
 
 /// Domain marker for credential keys
 ///
 /// Credentials represent authentication information.
 /// Credential keys have additional security considerations.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CredentialDomain;
 
 // Domain implementations
