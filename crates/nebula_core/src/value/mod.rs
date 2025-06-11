@@ -6,6 +6,7 @@ pub mod duration;
 pub mod number;
 pub mod object;
 pub mod string;
+mod mode;
 
 pub use array::ArrayValue;
 pub use binary::BinaryValue;
@@ -17,8 +18,8 @@ pub use object::ObjectValue;
 pub use string::StringValue;
 
 use serde::{Deserialize, Serialize};
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
+#[serde(tag = "type", rename_all = "lowercase")]
 pub enum Value {
     /// Text string value
     String(StringValue),

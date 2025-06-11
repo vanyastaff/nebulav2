@@ -1,0 +1,36 @@
+use std::ops::Deref;
+use serde::{Deserialize, Serialize};
+use typetag::serde;
+use super::{StringValue, Value};
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde()]
+pub struct ModeValue {
+    pub mode: String,
+    pub value: StringValue,
+}
+
+impl ModeValue {
+    pub fn new(mode: impl Into<String>, value: impl Into<StringValue>) -> Self {
+        Self {
+            mode: mode.into(),
+            value: value.into(),
+        }
+    }
+
+    pub fn mode(&self) -> &str {
+        &self.mode
+    }
+
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+impl Deref for ModeValue {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}

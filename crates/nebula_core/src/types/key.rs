@@ -136,42 +136,42 @@ pub trait KeyDomain: 'static + Send + Sync + fmt::Debug {
 ///
 /// Parameters represent configurable values for nodes and actions.
 /// Parameter keys cannot start with underscore (reserved for internal parameters).
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParameterDomain;
 
 /// Domain marker for action keys
 ///
 /// Actions represent operations that can be performed by nodes.
 /// Action keys must follow the `verb_noun` pattern (e.g., `send_request`, `validate_data`).
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ActionDomain;
 
 /// Domain marker for node keys
 ///
 /// Nodes represent processing units in the workflow.
 /// Node keys should be descriptive and unique within the workflow.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NodeDomain;
 
 /// Domain marker for connection keys
 ///
 /// Connections represent data flow between nodes.
 /// Connection keys are typically auto-generated but can be customized.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConnectionDomain;
 
 /// Domain marker for workflow keys
 ///
 /// Workflows represent complete automation sequences.
 /// Workflow keys should be globally unique and descriptive.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WorkflowDomain;
 
 /// Domain marker for credential keys
 ///
 /// Credentials represent authentication information.
 /// Credential keys have additional security considerations.
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CredentialDomain;
 
 // Domain implementations

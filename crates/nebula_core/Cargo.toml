@@ -9,13 +9,18 @@ description.workspace = true
 keywords.workspace = true
 
 [dependencies]
+async-trait = "0.1.88"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_json = {version = "1.0.140", features = []}
 thiserror = "2.0.12"
 derive_more = {version = "2.0.1", features = ["full"]}
+derive_builder = {version = "0.20.2", features = []}
 chrono = {version = "0.4.41", features = ["serde", "now"]}
 indexmap = {version = "2.0.0", features = ["serde"]}
 base64 = "0.22.1"
+downcast-rs = {version = "2.0.1" }
+dyn-clone = {version = "1.0.19"}
+typetag = {version = "0.2.20"}
 
 [lints]
 workspace = true
