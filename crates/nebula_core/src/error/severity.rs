@@ -35,6 +35,30 @@ impl ErrorSeverity {
         }
     }
 
+    /// Checks if severity is critical
+    #[inline]
+    pub const fn is_critical(&self) -> bool {
+        matches!(self, Self::Critical)
+    }
+
+    /// Checks if severity is error or above
+    #[inline]
+    pub const fn is_error_or_above(&self) -> bool {
+        self.priority() >= 4
+    }
+
+    /// Checks if severity is warning or above
+    #[inline]
+    pub const fn is_warning_or_above(&self) -> bool {
+        self.priority() >= 3
+    }
+
+    /// Checks if this severity should be logged
+    #[inline]
+    pub const fn should_log(&self, min_level: ErrorSeverity) -> bool {
+        self.priority() >= min_level.priority()
+    }
+
     // Const instances
     pub const CRITICAL: Self = Self::Critical;
     pub const ERROR: Self = Self::Error;
