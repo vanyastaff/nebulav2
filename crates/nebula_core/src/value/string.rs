@@ -1,13 +1,21 @@
-use derive_more::{
-    AsRef, Deref, DerefMut, Display,
-    From, FromStr, Into
-};
+use derive_more::{AsRef, Deref, DerefMut, Display, From, FromStr, Into};
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Debug, Clone, PartialEq, Eq, Hash,
-    Serialize, Deserialize, From, Into, AsRef, Deref, DerefMut,
-    Display, FromStr
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Hash,
+    Serialize,
+    Deserialize,
+    From,
+    Into,
+    AsRef,
+    Deref,
+    DerefMut,
+    Display,
+    FromStr,
 )]
 pub struct StringValue(String);
 

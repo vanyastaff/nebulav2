@@ -1,7 +1,7 @@
-use derive_builder::Builder;
-use serde::{Deserialize, Serialize};
 use crate::parameter::ParameterError;
 use crate::types::ParameterKey;
+use derive_builder::Builder;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Builder)]
 #[builder(
@@ -61,20 +61,16 @@ impl ParameterOption {
     pub fn simple(
         key: impl Into<String>,
         name: impl Into<String>,
-        value: impl Into<ParameterOptionValue>
+        value: impl Into<ParameterOptionValue>,
     ) -> Result<Self, ParameterError> {
-        Self::builder()
-            .key(key)
-            .name(name)
-            .value(value)
-            .build()
+        Self::builder().key(key).name(name).value(value).build()
     }
 
     pub fn with_description(
         key: impl Into<String>,
         name: impl Into<String>,
         value: impl Into<ParameterOptionValue>,
-        description: impl Into<String>
+        description: impl Into<String>,
     ) -> Result<Self, ParameterError> {
         Self::builder()
             .key(key)
@@ -88,7 +84,7 @@ impl ParameterOption {
         key: impl Into<String>,
         name: impl Into<String>,
         value: impl Into<ParameterOptionValue>,
-        group: impl Into<String>
+        group: impl Into<String>,
     ) -> Result<Self, ParameterError> {
         Self::builder()
             .key(key)
@@ -101,7 +97,7 @@ impl ParameterOption {
     pub fn rich(
         key: impl Into<String>,
         name: impl Into<String>,
-        value: impl Into<ParameterOptionValue>
+        value: impl Into<ParameterOptionValue>,
     ) -> ParameterOptionBuilder {
         ParameterOptionBuilder::default()
             .key(key)

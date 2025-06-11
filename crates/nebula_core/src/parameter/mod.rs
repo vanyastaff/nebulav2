@@ -1,14 +1,17 @@
-mod parameter;
-mod metadata;
+mod collection;
+mod display;
 mod error;
 mod kind;
-mod value;
-mod display;
-mod validation;
+mod metadata;
 mod options;
+mod parameter;
+mod validation;
+mod value;
 
-pub use parameter::*;
-pub use metadata::*;
+pub use display::*;
 pub use error::*;
 pub use kind::*;
-pub use value::{ParameterValue};
+pub use metadata::*;
+pub use parameter::*;
+pub use validation::*;
+pub use value::ParameterValue;

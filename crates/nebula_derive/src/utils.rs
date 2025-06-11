@@ -15,8 +15,8 @@ fn to_snake_case(input: &str) -> String {
                 let prev_char = chars[i - 1];
                 let next_char = chars.get(i + 1);
 
-                prev_char.is_lowercase() ||
-                    (prev_char.is_uppercase() && next_char.map_or(false, |c| c.is_lowercase()))
+                prev_char.is_lowercase()
+                    || (prev_char.is_uppercase() && next_char.map_or(false, |c| c.is_lowercase()))
             };
 
             if should_add_underscore {

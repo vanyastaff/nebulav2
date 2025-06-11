@@ -1,4 +1,4 @@
-use derive_more::{Add, Display, Div, Mul, Sub};
+use derive_more::{Add, Display, Sub};
 use serde::{Deserialize, Serialize};
 
 /// Numeric value type preserving integer vs float distinction
@@ -96,31 +96,49 @@ impl NumberValue {
 }
 
 impl From<i8> for NumberValue {
-    fn from(value: i8) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: i8) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<i16> for NumberValue {
-    fn from(value: i16) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: i16) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<i32> for NumberValue {
-    fn from(value: i32) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: i32) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<i64> for NumberValue {
-    fn from(value: i64) -> Self { NumberValue::Integer(value) }
+    fn from(value: i64) -> Self {
+        NumberValue::Integer(value)
+    }
 }
 impl From<u8> for NumberValue {
-    fn from(value: u8) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: u8) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<u16> for NumberValue {
-    fn from(value: u16) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: u16) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<u32> for NumberValue {
-    fn from(value: u32) -> Self { NumberValue::Integer(value as i64) }
+    fn from(value: u32) -> Self {
+        NumberValue::Integer(value as i64)
+    }
 }
 impl From<f32> for NumberValue {
-    fn from(value: f32) -> Self { NumberValue::Float(value as f64) }
+    fn from(value: f32) -> Self {
+        NumberValue::Float(value as f64)
+    }
 }
 impl From<f64> for NumberValue {
-    fn from(value: f64) -> Self { NumberValue::Float(value) }
+    fn from(value: f64) -> Self {
+        NumberValue::Float(value)
+    }
 }
 
 impl PartialOrd for NumberValue {
@@ -131,7 +149,9 @@ impl PartialOrd for NumberValue {
 
 impl Ord for NumberValue {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.as_f64().partial_cmp(&other.as_f64()).unwrap_or(std::cmp::Ordering::Equal)
+        self.as_f64()
+            .partial_cmp(&other.as_f64())
+            .unwrap_or(std::cmp::Ordering::Equal)
     }
 }
 
@@ -147,9 +167,9 @@ impl Into<serde_json::Value> for NumberValue {
     fn into(self) -> serde_json::Value {
         match self {
             NumberValue::Integer(i) => serde_json::Value::Number(serde_json::Number::from(i)),
-            NumberValue::Float(f) => serde_json::Value::Number(serde_json::Number::from_f64(f).unwrap()),
+            NumberValue::Float(f) => {
+                serde_json::Value::Number(serde_json::Number::from_f64(f).unwrap())
+            }
         }
     }
 }
-
-

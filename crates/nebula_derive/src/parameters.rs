@@ -1,10 +1,10 @@
 // crates/nebula_macros/src/parameters.rs
 
+use crate::utils::field_name_to_key;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Fields, Result, Field, Attribute, Meta, Lit, Path};
 use std::collections::HashMap;
-use crate::utils::field_name_to_key;
+use syn::{Attribute, Data, DeriveInput, Field, Fields, Lit, Meta, Path, Result};
 
 // Убираем Default из FieldConfig
 #[derive(Debug)]
@@ -98,11 +98,24 @@ struct FieldCondition {
 
 #[derive(Debug)]
 enum ConditionOperator {
-    Eq, NotEq, Gt, Gte, Lt, Lte,
-    In, NotIn, Matches, Contains,
-    StartsWith, EndsWith, Between,
+    Eq,
+    NotEq,
+    Gt,
+    Gte,
+    Lt,
+    Lte,
+    In,
+    NotIn,
+    Matches,
+    Contains,
+    StartsWith,
+    EndsWith,
+    Between,
     // Унарные
-    NotEmpty, Empty, True, False,
+    NotEmpty,
+    Empty,
+    True,
+    False,
 }
 
 #[derive(Debug)]
@@ -141,7 +154,7 @@ pub fn derive_parameters_impl(input: DeriveInput) -> Result<TokenStream> {
         _ => {
             return Err(syn::Error::new_spanned(
                 input,
-                "Parameters can only be derived for structs"
+                "Parameters can only be derived for structs",
             ));
         }
     };
@@ -151,7 +164,7 @@ pub fn derive_parameters_impl(input: DeriveInput) -> Result<TokenStream> {
         _ => {
             return Err(syn::Error::new_spanned(
                 input,
-                "Parameters requires named fields"
+                "Parameters requires named fields",
             ));
         }
     };
@@ -190,7 +203,9 @@ pub fn derive_parameters_impl(input: DeriveInput) -> Result<TokenStream> {
 }
 
 fn parse_field(field: &Field) -> Result<FieldConfig> {
-    let field_name = field.ident.as_ref()
+    let field_name = field
+        .ident
+        .as_ref()
         .ok_or_else(|| syn::Error::new_spanned(field, "Field must have a name"))?
         .to_string();
 
@@ -257,34 +272,52 @@ fn infer_parameter_type(field_type: &syn::Type) -> Result<ParameterTypeConfig> {
 
 fn is_option_type(type_path: &syn::TypePath) -> bool {
     // Проверяем что последний сегмент пути это "Option"
-    type_path.path.segments.last()
+    type_path
+        .path
+        .segments
+        .last()
         .map(|segment| segment.ident == "Option")
         .unwrap_or(false)
 }
 
 fn extract_option_inner_type(type_path: &syn::TypePath) -> Result<syn::Type> {
-    let last_segment = type_path.path.segments.last()
+    let last_segment = type_path
+        .path
+        .segments
+        .last()
         .ok_or_else(|| syn::Error::new_spanned(type_path, "Empty type path"))?;
 
     match &last_segment.arguments {
         syn::PathArguments::AngleBracketed(args) => {
             if args.args.len() != 1 {
-                return Err(syn::Error::new_spanned(args, "Option must have exactly one type argument"));
+                return Err(syn::Error::new_spanned(
+                    args,
+                    "Option must have exactly one type argument",
+                ));
             }
 
             match &args.args[0] {
                 syn::GenericArgument::Type(inner_type) => Ok(inner_type.clone()),
-                _ => Err(syn::Error::new_spanned(&args.args[0], "Expected type argument")),
+                _ => Err(syn::Error::new_spanned(
+                    &args.args[0],
+                    "Expected type argument",
+                )),
             }
         }
-        _ => Err(syn::Error::new_spanned(last_segment, "Option must have type arguments")),
+        _ => Err(syn::Error::new_spanned(
+            last_segment,
+            "Option must have type arguments",
+        )),
     }
 }
 
 fn infer_parameter_type_for_inner(field_type: &syn::Type) -> Result<ParameterTypeConfig> {
     match field_type {
         syn::Type::Path(type_path) => {
-            let type_name = type_path.path.segments.last()
+            let type_name = type_path
+                .path
+                .segments
+                .last()
                 .map(|seg| seg.ident.to_string())
                 .unwrap_or_default();
 
@@ -302,19 +335,17 @@ fn infer_parameter_type_for_inner(field_type: &syn::Type) -> Result<ParameterTyp
                 }),
                 _ => Err(syn::Error::new_spanned(
                     field_type,
-                    "Cannot infer parameter type, please add explicit attribute"
+                    "Cannot infer parameter type, please add explicit attribute",
                 )),
             }
         }
-        syn::Type::Tuple(tuple) if tuple.elems.is_empty() => {
-            Err(syn::Error::new_spanned(
-                field_type,
-                "Unit type fields must have explicit parameter type attribute"
-            ))
-        }
+        syn::Type::Tuple(tuple) if tuple.elems.is_empty() => Err(syn::Error::new_spanned(
+            field_type,
+            "Unit type fields must have explicit parameter type attribute",
+        )),
         _ => Err(syn::Error::new_spanned(
             field_type,
-            "Cannot infer parameter type for this type"
+            "Cannot infer parameter type for this type",
         )),
     }
 }
@@ -382,10 +413,7 @@ fn generate_parameter_collection(configs: &[FieldConfig]) -> Result<TokenStream>
     })
 }
 
-fn generate_from_values(
-    struct_name: &syn::Ident,
-    _configs: &[FieldConfig]
-) -> Result<TokenStream> {
+fn generate_from_values(struct_name: &syn::Ident, _configs: &[FieldConfig]) -> Result<TokenStream> {
     Ok(quote! {
         Ok(#struct_name {
             // TODO: десериализация полей

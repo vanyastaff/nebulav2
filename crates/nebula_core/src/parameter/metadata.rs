@@ -1,7 +1,7 @@
+use super::ParameterError;
+use crate::types::ParameterKey;
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
-use crate::types::ParameterKey;
-use super::ParameterError;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Builder)]
 #[builder(

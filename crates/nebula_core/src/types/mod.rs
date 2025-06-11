@@ -1,3 +1,3 @@
 mod key;
 
-pub use key::{ParameterKey, KeyParseError};
+pub use key::{KeyParseError, ParameterKey};

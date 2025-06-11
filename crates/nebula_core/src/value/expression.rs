@@ -1,6 +1,6 @@
 // nebula_core/src/value/expression.rs
 
-use derive_more::{Deref, DerefMut, Into, Display};
+use derive_more::{Deref, DerefMut, Display, Into};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Deref, DerefMut, Into, Display)]

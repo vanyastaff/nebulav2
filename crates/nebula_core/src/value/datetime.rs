@@ -22,20 +22,17 @@ impl DateTimeValue {
 
     /// Creates a datetime value from UTC timestamp
     pub fn from_timestamp(timestamp: i64) -> Option<Self> {
-        DateTime::from_timestamp(timestamp, 0)
-            .map(DateTimeValue::DateTime)
+        DateTime::from_timestamp(timestamp, 0).map(DateTimeValue::DateTime)
     }
 
     /// Creates a date value
     pub fn date(year: i32, month: u32, day: u32) -> Option<Self> {
-        NaiveDate::from_ymd_opt(year, month, day)
-            .map(DateTimeValue::Date)
+        NaiveDate::from_ymd_opt(year, month, day).map(DateTimeValue::Date)
     }
 
     /// Creates a time value
     pub fn time(hour: u32, min: u32, sec: u32) -> Option<Self> {
-        NaiveTime::from_hms_opt(hour, min, sec)
-            .map(DateTimeValue::Time)
+        NaiveTime::from_hms_opt(hour, min, sec).map(DateTimeValue::Time)
     }
 
     /// Creates from ISO 8601 string (auto-detects format)
@@ -122,13 +119,11 @@ impl DateTimeValue {
     pub fn to_datetime(&self, default_date: Option<NaiveDate>) -> Option<DateTime<Utc>> {
         match self {
             DateTimeValue::DateTime(dt) => Some(*dt),
-            DateTimeValue::Date(date) => {
-                Some(date.and_hms_opt(0, 0, 0)?.and_utc())
-            },
+            DateTimeValue::Date(date) => Some(date.and_hms_opt(0, 0, 0)?.and_utc()),
             DateTimeValue::Time(time) => {
                 let date = default_date?;
                 Some(date.and_time(*time).and_utc())
-            },
+            }
         }
     }
 }

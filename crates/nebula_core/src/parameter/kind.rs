@@ -67,18 +67,18 @@ impl ParameterKind {
 
             ParameterKind::Checkbox => &[HasValue, Editable, Displayable],
 
-            ParameterKind::Text |
-            ParameterKind::Textarea |
-            ParameterKind::Select |
-            ParameterKind::MultiSelect |
-            ParameterKind::Number |
-            ParameterKind::DateTime |
-            ParameterKind::Date |
-            ParameterKind::Time |
-            ParameterKind::Secret |
-            ParameterKind::File |
-            ParameterKind::Color |
-            ParameterKind::Radio => &[HasValue, Editable, Validatable, Displayable],
+            ParameterKind::Text
+            | ParameterKind::Textarea
+            | ParameterKind::Select
+            | ParameterKind::MultiSelect
+            | ParameterKind::Number
+            | ParameterKind::DateTime
+            | ParameterKind::Date
+            | ParameterKind::Time
+            | ParameterKind::Secret
+            | ParameterKind::File
+            | ParameterKind::Color
+            | ParameterKind::Radio => &[HasValue, Editable, Validatable, Displayable],
 
             ParameterKind::Mode => &[HasValue, Editable, Validatable, Displayable],
             ParameterKind::Expirable => &[HasValue, Editable, Validatable, Displayable],

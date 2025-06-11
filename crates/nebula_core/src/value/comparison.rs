@@ -50,7 +50,11 @@ impl ValueComparison {
     pub fn greater_than(left: &Value, right: &Value) -> ComparisonResult {
         match (left.try_as_number(), right.try_as_number()) {
             (Ok(a), Ok(b)) => {
-                if a > b { ComparisonResult::True } else { ComparisonResult::False }
+                if a > b {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -59,7 +63,11 @@ impl ValueComparison {
     pub fn less_than(left: &Value, right: &Value) -> ComparisonResult {
         match (left.try_as_number(), right.try_as_number()) {
             (Ok(a), Ok(b)) => {
-                if a < b { ComparisonResult::True } else { ComparisonResult::False }
+                if a < b {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -68,7 +76,11 @@ impl ValueComparison {
     pub fn greater_than_or_equal(left: &Value, right: &Value) -> ComparisonResult {
         match (left.try_as_number(), right.try_as_number()) {
             (Ok(a), Ok(b)) => {
-                if a >= b { ComparisonResult::True } else { ComparisonResult::False }
+                if a >= b {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -77,7 +89,11 @@ impl ValueComparison {
     pub fn less_than_or_equal(left: &Value, right: &Value) -> ComparisonResult {
         match (left.try_as_number(), right.try_as_number()) {
             (Ok(a), Ok(b)) => {
-                if a <= b { ComparisonResult::True } else { ComparisonResult::False }
+                if a <= b {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -114,7 +130,11 @@ impl ValueComparison {
     pub fn contains(value: &Value, substring: &Value) -> ComparisonResult {
         match (value.try_as_string(), substring.try_as_string()) {
             (Ok(text), Ok(sub)) => {
-                if text.contains(sub) { ComparisonResult::True } else { ComparisonResult::False }
+                if text.contains(sub) {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -124,7 +144,11 @@ impl ValueComparison {
     pub fn starts_with(value: &Value, prefix: &Value) -> ComparisonResult {
         match (value.try_as_string(), prefix.try_as_string()) {
             (Ok(text), Ok(pref)) => {
-                if text.starts_with(pref) { ComparisonResult::True } else { ComparisonResult::False }
+                if text.starts_with(pref) {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -134,7 +158,11 @@ impl ValueComparison {
     pub fn ends_with(value: &Value, suffix: &Value) -> ComparisonResult {
         match (value.try_as_string(), suffix.try_as_string()) {
             (Ok(text), Ok(suff)) => {
-                if text.ends_with(suff) { ComparisonResult::True } else { ComparisonResult::False }
+                if text.ends_with(suff) {
+                    ComparisonResult::True
+                } else {
+                    ComparisonResult::False
+                }
             }
             (Err(e), _) | (_, Err(e)) => ComparisonResult::Error(e),
         }
@@ -143,18 +171,18 @@ impl ValueComparison {
     /// Проверяет соответствие регулярному выражению
     pub fn matches_regex(value: &Value, pattern: &str) -> ComparisonResult {
         match value.try_as_string() {
-            Ok(text) => {
-                match Regex::new(pattern) {
-                    Ok(regex) => {
-                        if regex.is_match(text) {
-                            ComparisonResult::True
-                        } else {
-                            ComparisonResult::False
-                        }
+            Ok(text) => match Regex::new(pattern) {
+                Ok(regex) => {
+                    if regex.is_match(text) {
+                        ComparisonResult::True
+                    } else {
+                        ComparisonResult::False
                     }
-                    Err(e) => ComparisonResult::Error(ValueError::invalid_regex(pattern, e.to_string())),
                 }
-            }
+                Err(e) => {
+                    ComparisonResult::Error(ValueError::invalid_regex(pattern, e.to_string()))
+                }
+            },
             Err(e) => ComparisonResult::Error(e),
         }
     }
@@ -189,7 +217,11 @@ impl ValueComparison {
 
     /// Проверяет, что числовое значение находится в диапазоне
     pub fn between(value: &Value, min: &Value, max: &Value) -> ComparisonResult {
-        match (value.try_as_number(), min.try_as_number(), max.try_as_number()) {
+        match (
+            value.try_as_number(),
+            min.try_as_number(),
+            max.try_as_number(),
+        ) {
             (Ok(val), Ok(min_val), Ok(max_val)) => {
                 if val >= min_val && val <= max_val {
                     ComparisonResult::True

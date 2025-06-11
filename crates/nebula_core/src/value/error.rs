@@ -21,7 +21,11 @@ pub enum ValueError {
     TypeConversion { from: String, to: String },
 
     #[error("Value out of range: {value} is not within {min}..{max}")]
-    OutOfRange { value: String, min: String, max: String },
+    OutOfRange {
+        value: String,
+        min: String,
+        max: String,
+    },
 
     #[error("Invalid enum variant: '{variant}' is not a valid {enum_name}")]
     InvalidEnumVariant { variant: String, enum_name: String },

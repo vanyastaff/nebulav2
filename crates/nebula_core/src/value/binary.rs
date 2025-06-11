@@ -1,11 +1,10 @@
+use base64::{engine::general_purpose, Engine as _};
 use derive_more::{Deref, DerefMut, From, Into};
 use serde::{Deserialize, Serialize};
-use base64::{Engine as _, engine::general_purpose};
 
 /// Binary data value type
 #[derive(
-    Debug, Clone, PartialEq, Eq, Hash,
-    Serialize, Deserialize, From, Into, Deref, DerefMut
+    Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, From, Into, Deref, DerefMut,
 )]
 pub struct BinaryValue(Vec<u8>);
 

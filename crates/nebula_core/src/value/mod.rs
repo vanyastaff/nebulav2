@@ -3,32 +3,32 @@
 pub mod array;
 pub mod binary;
 pub mod boolean;
+mod comparison;
 pub mod datetime;
 pub mod duration;
+pub mod error;
+pub mod expression;
+pub mod group;
+pub mod mode;
 pub mod number;
 pub mod object;
-pub mod string;
-pub mod mode;
-pub mod group;
-pub mod expression;
 pub mod regex;
-pub mod error;
-mod comparison;
+pub mod string;
 
-pub use error::ValueError;
 pub use array::ArrayValue;
 pub use binary::BinaryValue;
 pub use boolean::BooleanValue;
+pub use comparison::{ComparisonResult, ValueComparison};
 pub use datetime::DateTimeValue;
 pub use duration::DurationValue;
+pub use error::ValueError;
+pub use expression::ExpressionValue;
+pub use group::GroupValue;
+pub use mode::ModeValue;
 pub use number::NumberValue;
 pub use object::ObjectValue;
-pub use string::StringValue;
-pub use mode::ModeValue;
-pub use group::GroupValue;
-pub use expression::ExpressionValue;
 pub use regex::RegexValue;
-pub use comparison::{ValueComparison, ComparisonResult};
+pub use string::StringValue;
 
 use serde::{Deserialize, Serialize};
 use strum::AsRefStr;
@@ -158,43 +158,45 @@ impl Value {
     }
 
     pub fn as_group(&self) -> Option<&GroupValue> {
-        if let Self::Group(g) = self { Some(g) } else { None }
+        if let Self::Group(g) = self {
+            Some(g)
+        } else {
+            None
+        }
     }
 
     pub fn as_regex(&self) -> Option<&RegexValue> {
-        if let Self::Regex(r) = self { Some(r) } else { None }
+        if let Self::Regex(r) = self {
+            Some(r)
+        } else {
+            None
+        }
     }
 
     pub fn try_as_string(&self) -> Result<&str, ValueError> {
-        self.as_string().ok_or_else(|| {
-            ValueError::type_conversion(self.type_name(), "string")
-        })
+        self.as_string()
+            .ok_or_else(|| ValueError::type_conversion(self.type_name(), "string"))
     }
 
     pub fn try_as_number(&self) -> Result<f64, ValueError> {
         self.as_number()
             .map(|n| n.as_f64())
-            .ok_or_else(|| {
-                ValueError::type_conversion(self.type_name(), "number")
-            })
+            .ok_or_else(|| ValueError::type_conversion(self.type_name(), "number"))
     }
 
     pub fn try_as_boolean(&self) -> Result<bool, ValueError> {
-        self.as_boolean().ok_or_else(|| {
-            ValueError::type_conversion(self.type_name(), "boolean")
-        })
+        self.as_boolean()
+            .ok_or_else(|| ValueError::type_conversion(self.type_name(), "boolean"))
     }
 
     pub fn try_as_array(&self) -> Result<&ArrayValue, ValueError> {
-        self.as_array().ok_or_else(|| {
-            ValueError::type_conversion(self.type_name(), "array")
-        })
+        self.as_array()
+            .ok_or_else(|| ValueError::type_conversion(self.type_name(), "array"))
     }
 
     pub fn try_as_object(&self) -> Result<&ObjectValue, ValueError> {
-        self.as_object().ok_or_else(|| {
-            ValueError::type_conversion(self.type_name(), "object")
-        })
+        self.as_object()
+            .ok_or_else(|| ValueError::type_conversion(self.type_name(), "object"))
     }
 
     // Constructors

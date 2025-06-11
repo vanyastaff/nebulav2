@@ -1,10 +1,13 @@
+use crate::parameter::value::ParameterValue;
+use crate::parameter::{
+    ParameterDisplay, ParameterError, ParameterKind, ParameterMetadata, ParameterValidation,
+    ValidationError,
+};
+use crate::types::ParameterKey;
 use downcast_rs::{impl_downcast, Downcast};
 use dyn_clone::{clone_trait_object, DynClone};
 use std::any::Any;
 use std::fmt::Debug;
-use crate::parameter::{ParameterError, ParameterKind, ParameterMetadata};
-use crate::parameter::value::ParameterValue;
-use crate::types::ParameterKey;
 
 pub trait TypedParameter {
     fn kind(&self) -> ParameterKind;
@@ -26,12 +29,7 @@ pub trait Parameter: TypedParameter + DynClone + Downcast + Any + Debug + Send +
         None
     }
 
-    fn set_value(&mut self, value: ParameterValue) -> Result<(), ParameterError> {
-        if !self.kind().is_editable() {
-            return Err(ParameterError::NotEditable(self.key().clone()));
-        }
-        Ok(())
-    }
+    fn set_value(&mut self, _value: ParameterValue) -> Result<(), ParameterError>;
 
     fn validation_rules(&self) -> Option<&ParameterValidation> {
         None
@@ -68,4 +66,3 @@ pub trait Parameter: TypedParameter + DynClone + Downcast + Any + Debug + Send +
 
 impl_downcast!(Parameter);
 clone_trait_object!(Parameter);
-

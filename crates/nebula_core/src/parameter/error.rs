@@ -1,5 +1,5 @@
-use thiserror::Error;
 use crate::types::{KeyParseError, ParameterKey};
+use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum ParameterError {
@@ -26,4 +26,17 @@ pub enum ParameterError {
     /// Error serializing a parameter's value.
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
+
+    /// Type mismatch or other type-related error when handling a parameter's
+    #[error("Type error for parameter '{key}': Expected {expected_type}, got {actual_details}")]
+    InvalidType {
+        key: ParameterKey,
+        expected_type: String,
+        actual_details: String,
+    },
+
+    /// Validation failed for a parameter.
+    /// Includes the key of the parameter and the reason for failure.
+    #[error("Validation failed for parameter '{key}': {reason}")]
+    ValidationError { key: ParameterKey, reason: String },
 }

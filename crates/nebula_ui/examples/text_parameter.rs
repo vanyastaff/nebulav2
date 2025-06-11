@@ -23,20 +23,16 @@ impl Default for ParameterApp {
                 TextWidget::new("name", "Full Name")
                     .with_value("John Doe")
                     .required(true),
-
                 TextWidget::new("email", "Email Address")
                     .with_placeholder("example@domain.com")
                     .with_hint("We'll never share your email")
                     .required(true),
-
                 TextWidget::new("phone", "Phone Number")
                     .with_placeholder("+1 (555) 123-4567")
                     .with_hint("Optional field"),
-
                 TextWidget::new("bio", "Biography")
                     .with_value("Software developer")
                     .with_hint("Tell us about yourself"),
-
                 TextWidget::new("readonly", "Read Only Field")
                     .with_value("This cannot be edited")
                     .readonly(true),

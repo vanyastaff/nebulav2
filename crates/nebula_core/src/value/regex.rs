@@ -1,10 +1,10 @@
 // nebula_core/src/value/regex.rs
 
+use super::ValueError;
 use derive_more::{Deref, DerefMut};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use super::ValueError;
 
 #[derive(Debug, Clone, Deref, DerefMut, Serialize, Deserialize)]
 pub struct RegexValue(#[serde(with = "serde_regex")] Regex);
@@ -12,9 +12,8 @@ pub struct RegexValue(#[serde(with = "serde_regex")] Regex);
 impl RegexValue {
     pub fn new(pattern: impl AsRef<str>) -> Result<Self, ValueError> {
         let pattern_str = pattern.as_ref();
-        let regex = Regex::new(pattern_str).map_err(|e| {
-            ValueError::invalid_regex(pattern_str, e.to_string())
-        })?;
+        let regex = Regex::new(pattern_str)
+            .map_err(|e| ValueError::invalid_regex(pattern_str, e.to_string()))?;
 
         Ok(Self(regex))
     }

@@ -1,10 +1,10 @@
 // src/validation/display.rs
 
-use std::collections::HashMap;
-use serde::{Deserialize, Serialize};
-use crate::value::{Value, ValueComparison};
 use crate::parameter::ParameterValue;
 use crate::types::ParameterKey;
+use crate::value::{Value, ValueComparison};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Conditions for showing/hiding fields in the UI
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -55,15 +55,9 @@ impl DisplayCondition {
             Self::IsEmpty => ValueComparison::is_empty(value),
             Self::IsNotEmpty => ValueComparison::is_not_empty(value),
 
-            Self::And(conditions) => {
-                conditions.iter().all(|condition| condition.check(value))
-            }
-            Self::Or(conditions) => {
-                conditions.iter().any(|condition| condition.check(value))
-            }
-            Self::Not(condition) => {
-                !condition.check(value)
-            }
+            Self::And(conditions) => conditions.iter().all(|condition| condition.check(value)),
+            Self::Or(conditions) => conditions.iter().any(|condition| condition.check(value)),
+            Self::Not(condition) => !condition.check(value),
         }
     }
 
@@ -180,7 +174,9 @@ impl ParameterDisplay {
             let should_show = show_rules.iter().any(|(field_key, conditions)| {
                 if let Some(param_value) = all_values.get(field_key) {
                     // Thanks to Deref, param_value can be used directly as &Value
-                    conditions.iter().any(|condition| condition.check(param_value))
+                    conditions
+                        .iter()
+                        .any(|condition| condition.check(param_value))
                 } else {
                     false // Field is missing - condition not met
                 }
@@ -196,7 +192,9 @@ impl ParameterDisplay {
             let should_hide = hide_rules.iter().any(|(field_key, conditions)| {
                 if let Some(param_value) = all_values.get(field_key) {
                     // Thanks to Deref, param_value can be used directly as &Value
-                    conditions.iter().any(|condition| condition.check(param_value))
+                    conditions
+                        .iter()
+                        .any(|condition| condition.check(param_value))
                 } else {
                     false // Field is missing - condition not met
                 }
@@ -326,58 +324,34 @@ impl ParameterDisplayBuilder {
     }
 
     /// Adds a hide condition
-    pub fn hide_when(
-        mut self,
-        field: ParameterKey,
-        condition: DisplayCondition,
-    ) -> Self {
+    pub fn hide_when(mut self, field: ParameterKey, condition: DisplayCondition) -> Self {
         self.display.add_hide_condition(field, condition);
         self
     }
 
     /// Adds a show condition
-    pub fn show_when(
-        mut self,
-        field: ParameterKey,
-        condition: DisplayCondition,
-    ) -> Self {
+    pub fn show_when(mut self, field: ParameterKey, condition: DisplayCondition) -> Self {
         self.display.add_show_condition(field, condition);
         self
     }
 
     /// Adds a hide condition by equality
-    pub fn hide_when_equals<T: Into<Value>>(
-        self,
-        field: ParameterKey,
-        value: T,
-    ) -> Self {
+    pub fn hide_when_equals<T: Into<Value>>(self, field: ParameterKey, value: T) -> Self {
         self.hide_when(field, DisplayCondition::equals(value))
     }
 
     /// Adds a show condition by equality
-    pub fn show_when_equals<T: Into<Value>>(
-        self,
-        field: ParameterKey,
-        value: T,
-    ) -> Self {
+    pub fn show_when_equals<T: Into<Value>>(self, field: ParameterKey, value: T) -> Self {
         self.show_when(field, DisplayCondition::equals(value))
     }
 
     /// Adds a hide condition by list inclusion
-    pub fn hide_when_in<T: Into<Value>>(
-        self,
-        field: ParameterKey,
-        values: Vec<T>,
-    ) -> Self {
+    pub fn hide_when_in<T: Into<Value>>(self, field: ParameterKey, values: Vec<T>) -> Self {
         self.hide_when(field, DisplayCondition::is_in(values))
     }
 
     /// Adds a show condition by list inclusion
-    pub fn show_when_in<T: Into<Value>>(
-        self,
-        field: ParameterKey,
-        values: Vec<T>,
-    ) -> Self {
+    pub fn show_when_in<T: Into<Value>>(self, field: ParameterKey, values: Vec<T>) -> Self {
         self.show_when(field, DisplayCondition::is_in(values))
     }
 
@@ -400,8 +374,8 @@ impl ParameterDisplayBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::value::Value;
     use crate::parameter::ParameterValue;
+    use crate::value::Value;
 
     #[test]
     fn test_display_condition_equals() {
@@ -458,14 +432,14 @@ mod tests {
         let mut values = HashMap::new();
         values.insert(
             ParameterKey::new("mode").unwrap(),
-            ParameterValue::new(Value::string("advanced"))
+            ParameterValue::new(Value::string("advanced")),
         );
 
         assert!(display.should_display(&values));
 
         values.insert(
             ParameterKey::new("mode").unwrap(),
-            ParameterValue::new(Value::string("simple"))
+            ParameterValue::new(Value::string("simple")),
         );
         assert!(!display.should_display(&values));
     }
@@ -487,22 +461,22 @@ mod tests {
         let mut values = HashMap::new();
         values.insert(
             ParameterKey::new("notification_type").unwrap(),
-            ParameterValue::new(Value::string("email"))
+            ParameterValue::new(Value::string("email")),
         );
         values.insert(
             ParameterKey::new("email_address").unwrap(),
-            ParameterValue::new(Value::string("test@example.com"))
+            ParameterValue::new(Value::string("test@example.com")),
         );
 
         // Show email settings only if notification_type = "email" AND email is not empty
         let display = ParameterDisplayBuilder::new()
             .show_when(
                 ParameterKey::new("notification_type").unwrap(),
-                DisplayCondition::equals("email")
+                DisplayCondition::equals("email"),
             )
             .show_when(
                 ParameterKey::new("email_address").unwrap(),
-                DisplayCondition::is_not_empty()
+                DisplayCondition::is_not_empty(),
             )
             .build();
 
@@ -511,7 +485,7 @@ mod tests {
         // Change notification type - should hide
         values.insert(
             ParameterKey::new("notification_type").unwrap(),
-            ParameterValue::new(Value::string("sms"))
+            ParameterValue::new(Value::string("sms")),
         );
         assert!(!display.should_display(&values));
     }

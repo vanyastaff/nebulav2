@@ -1,8 +1,8 @@
-use std::collections::HashMap;
 use super::Value;
 use derive_more::{Deref, DerefMut};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, Deref, DerefMut)]
 pub struct GroupValue(IndexMap<String, Value>);
@@ -27,10 +27,6 @@ impl FromIterator<(String, Value)> for GroupValue {
 
 impl Into<serde_json::Value> for GroupValue {
     fn into(self) -> serde_json::Value {
-        serde_json::Value::Object(
-            self.0.into_iter()
-                .map(|(k, v)| (k, v.into()))
-                .collect(),
-        )
+        serde_json::Value::Object(self.0.into_iter().map(|(k, v)| (k, v.into())).collect())
     }
 }

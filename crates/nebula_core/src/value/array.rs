@@ -1,12 +1,9 @@
-use crate::value::{StringValue, Value};
+use crate::value::Value;
 use derive_more::{Deref, DerefMut, Into};
 use serde::{Deserialize, Serialize};
 
 /// Array value type for collections of values
-#[derive(
-    Debug, Clone, PartialEq,
-    Serialize, Deserialize, Into, Deref, DerefMut
-)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Into, Deref, DerefMut)]
 pub struct ArrayValue(Vec<Value>);
 
 impl ArrayValue {
@@ -58,8 +55,6 @@ impl std::ops::IndexMut<usize> for ArrayValue {
 
 impl Into<serde_json::Value> for ArrayValue {
     fn into(self) -> serde_json::Value {
-        serde_json::Value::Array(
-            self.0.into_iter().map(|value| value.into()).collect()
-        )
+        serde_json::Value::Array(self.0.into_iter().map(|value| value.into()).collect())
     }
 }

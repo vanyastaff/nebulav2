@@ -4,12 +4,10 @@
 
 extern crate proc_macro;
 
-use utils::*;
-
-mod parameters;
 mod action;
-mod node;
 mod credential;
+mod node;
+mod parameters;
 mod resource;
 mod utils;
 
@@ -17,11 +15,30 @@ use proc_macro::TokenStream;
 use syn::{parse_macro_input, DeriveInput};
 
 /// Derives the `Parameters` trait for parameter definitions
-#[proc_macro_derive(Parameters, attributes(
-    text, textarea, select, multi_select, radio, checkbox, secret, file,
-    color, date, datetime, time, button, hidden, notice, group, mode,
-    display, validation
-))]
+#[proc_macro_derive(
+    Parameters,
+    attributes(
+        text,
+        textarea,
+        select,
+        multi_select,
+        radio,
+        checkbox,
+        secret,
+        file,
+        color,
+        date,
+        datetime,
+        time,
+        button,
+        hidden,
+        notice,
+        group,
+        mode,
+        display,
+        validation
+    )
+)]
 pub fn derive_parameters(input: TokenStream) -> TokenStream {
     let ast = parse_macro_input!(input as DeriveInput);
     match parameters::derive_parameters_impl(ast) {

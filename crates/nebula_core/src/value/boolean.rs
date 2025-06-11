@@ -2,10 +2,7 @@ use derive_more::{Deref, Display, From, Into};
 use serde::{Deserialize, Serialize};
 
 /// Boolean value type for true/false values
-#[derive(
-    Debug, Clone, PartialEq, Eq, Hash,
-    Serialize, Deserialize, From, Into, Deref, Display
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, From, Into, Deref, Display)]
 pub struct BooleanValue(bool);
 
 impl BooleanValue {

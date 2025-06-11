@@ -1,10 +1,10 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-use serde::{Deserialize, Serialize};
-use thiserror::Error;
-use crate::value::{Value, ValueComparison, ValueError, ComparisonResult};
 use crate::parameter::ParameterValue;
 use crate::types::ParameterKey;
+use crate::value::{ComparisonResult, Value, ValueComparison, ValueError};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
+use thiserror::Error;
 
 /// Errors that can occur during validation
 #[derive(Debug, Error, PartialEq, Clone)]
@@ -66,19 +66,18 @@ pub enum ValidationError {
 
     /// Missing required field
     #[error("Required field '{field}' is missing")]
-    MissingField {
-        field: ParameterKey,
-    },
+    MissingField { field: ParameterKey },
 }
 
 /// Custom validator function type
 pub type ValidatorFn = Arc<
     dyn Fn(
-        &ParameterValue,
-        &ParameterKey,
-        &HashMap<ParameterKey, ParameterValue>
-    ) -> Result<(), ValidationError>
-    + Send + Sync
+            &ParameterValue,
+            &ParameterKey,
+            &HashMap<ParameterKey, ParameterValue>,
+        ) -> Result<(), ValidationError>
+        + Send
+        + Sync,
 >;
 
 /// Validation conditions with full cross-field support
@@ -217,69 +216,61 @@ impl ValidationCondition {
                 }
             }
 
-            Self::Gt(expected) => {
-                match ValueComparison::greater_than(value, expected) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "greater_than".to_string(),
-                        expected: ValueComparison::format_for_display(expected),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Gt(expected) => match ValueComparison::greater_than(value, expected) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "greater_than".to_string(),
+                    expected: ValueComparison::format_for_display(expected),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::Lt(expected) => {
-                match ValueComparison::less_than(value, expected) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "less_than".to_string(),
-                        expected: ValueComparison::format_for_display(expected),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Lt(expected) => match ValueComparison::less_than(value, expected) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "less_than".to_string(),
+                    expected: ValueComparison::format_for_display(expected),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::Gte(expected) => {
-                match ValueComparison::greater_than_or_equal(value, expected) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "greater_than_or_equal".to_string(),
-                        expected: ValueComparison::format_for_display(expected),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Gte(expected) => match ValueComparison::greater_than_or_equal(value, expected) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "greater_than_or_equal".to_string(),
+                    expected: ValueComparison::format_for_display(expected),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::Lte(expected) => {
-                match ValueComparison::less_than_or_equal(value, expected) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "less_than_or_equal".to_string(),
-                        expected: ValueComparison::format_for_display(expected),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Lte(expected) => match ValueComparison::less_than_or_equal(value, expected) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "less_than_or_equal".to_string(),
+                    expected: ValueComparison::format_for_display(expected),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
             Self::In(list) => {
                 if ValueComparison::in_list(value, list) {
@@ -288,7 +279,12 @@ impl ValidationCondition {
                     Err(ValidationError::ComparisonFailed {
                         field: field.clone(),
                         operator: "in_list".to_string(),
-                        expected: format!("one of {:?}", list.iter().map(ValueComparison::format_for_display).collect::<Vec<_>>()),
+                        expected: format!(
+                            "one of {:?}",
+                            list.iter()
+                                .map(ValueComparison::format_for_display)
+                                .collect::<Vec<_>>()
+                        ),
                         actual: ValueComparison::format_for_display(value),
                     })
                 }
@@ -301,7 +297,12 @@ impl ValidationCondition {
                     Err(ValidationError::ComparisonFailed {
                         field: field.clone(),
                         operator: "not_in_list".to_string(),
-                        expected: format!("not one of {:?}", list.iter().map(ValueComparison::format_for_display).collect::<Vec<_>>()),
+                        expected: format!(
+                            "not one of {:?}",
+                            list.iter()
+                                .map(ValueComparison::format_for_display)
+                                .collect::<Vec<_>>()
+                        ),
                         actual: ValueComparison::format_for_display(value),
                     })
                 }
@@ -333,106 +334,103 @@ impl ValidationCondition {
                 }
             }
 
-            Self::Contains(substring) => {
-                match ValueComparison::contains(value, substring) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "contains".to_string(),
-                        expected: format!("string containing {}", ValueComparison::format_for_display(substring)),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Contains(substring) => match ValueComparison::contains(value, substring) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "contains".to_string(),
+                    expected: format!(
+                        "string containing {}",
+                        ValueComparison::format_for_display(substring)
+                    ),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::StartsWith(prefix) => {
-                match ValueComparison::starts_with(value, prefix) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "starts_with".to_string(),
-                        expected: format!("string starting with {}", ValueComparison::format_for_display(prefix)),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::StartsWith(prefix) => match ValueComparison::starts_with(value, prefix) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "starts_with".to_string(),
+                    expected: format!(
+                        "string starting with {}",
+                        ValueComparison::format_for_display(prefix)
+                    ),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::EndsWith(suffix) => {
-                match ValueComparison::ends_with(value, suffix) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "ends_with".to_string(),
-                        expected: format!("string ending with {}", ValueComparison::format_for_display(suffix)),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::EndsWith(suffix) => match ValueComparison::ends_with(value, suffix) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "ends_with".to_string(),
+                    expected: format!(
+                        "string ending with {}",
+                        ValueComparison::format_for_display(suffix)
+                    ),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::Regex(pattern) => {
-                match ValueComparison::matches_regex(value, pattern) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "regex_match".to_string(),
-                        expected: format!("string matching pattern '{}'", pattern),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Regex(pattern) => match ValueComparison::matches_regex(value, pattern) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "regex_match".to_string(),
+                    expected: format!("string matching pattern '{}'", pattern),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
             // String length validations
-            Self::MinLength(min) => {
-                match ValueComparison::min_length(value, *min) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => {
-                        let actual_len = value.as_string().map(|s| s.len()).unwrap_or(0);
-                        Err(ValidationError::StringLengthFailed {
-                            field: field.clone(),
-                            constraint: format!("at least {}", min),
-                            actual: actual_len,
-                        })
-                    },
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+            Self::MinLength(min) => match ValueComparison::min_length(value, *min) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => {
+                    let actual_len = value.as_string().map(|s| s.len()).unwrap_or(0);
+                    Err(ValidationError::StringLengthFailed {
                         field: field.clone(),
-                        source: e,
-                    }),
+                        constraint: format!("at least {}", min),
+                        actual: actual_len,
+                    })
                 }
-            }
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
-            Self::MaxLength(max) => {
-                match ValueComparison::max_length(value, *max) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => {
-                        let actual_len = value.as_string().map(|s| s.len()).unwrap_or(0);
-                        Err(ValidationError::StringLengthFailed {
-                            field: field.clone(),
-                            constraint: format!("at most {}", max),
-                            actual: actual_len,
-                        })
-                    },
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+            Self::MaxLength(max) => match ValueComparison::max_length(value, *max) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => {
+                    let actual_len = value.as_string().map(|s| s.len()).unwrap_or(0);
+                    Err(ValidationError::StringLengthFailed {
                         field: field.clone(),
-                        source: e,
-                    }),
+                        constraint: format!("at most {}", max),
+                        actual: actual_len,
+                    })
                 }
-            }
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
             Self::LengthBetween { min, max } => {
                 if let Some(text) = value.as_string() {
@@ -454,24 +452,23 @@ impl ValidationCondition {
                 }
             }
 
-            Self::Between { min, max } => {
-                match ValueComparison::between(value, min, max) {
-                    ComparisonResult::True => Ok(()),
-                    ComparisonResult::False => Err(ValidationError::ComparisonFailed {
-                        field: field.clone(),
-                        operator: "between".to_string(),
-                        expected: format!("between {} and {}",
-                                          ValueComparison::format_for_display(min),
-                                          ValueComparison::format_for_display(max)
-                        ),
-                        actual: ValueComparison::format_for_display(value),
-                    }),
-                    ComparisonResult::Error(e) => Err(ValidationError::ValueError {
-                        field: field.clone(),
-                        source: e,
-                    }),
-                }
-            }
+            Self::Between { min, max } => match ValueComparison::between(value, min, max) {
+                ComparisonResult::True => Ok(()),
+                ComparisonResult::False => Err(ValidationError::ComparisonFailed {
+                    field: field.clone(),
+                    operator: "between".to_string(),
+                    expected: format!(
+                        "between {} and {}",
+                        ValueComparison::format_for_display(min),
+                        ValueComparison::format_for_display(max)
+                    ),
+                    actual: ValueComparison::format_for_display(value),
+                }),
+                ComparisonResult::Error(e) => Err(ValidationError::ValueError {
+                    field: field.clone(),
+                    source: e,
+                }),
+            },
 
             // Cross-field validations
             Self::EqualsField(target_field) => {
@@ -595,10 +592,16 @@ impl ValidationCondition {
             }
 
             // Conditional validations
-            Self::RequiredIf { field: condition_field, condition } => {
+            Self::RequiredIf {
+                field: condition_field,
+                condition,
+            } => {
                 if let Some(condition_value) = all_values.get(condition_field) {
                     // Check if the condition is met
-                    if condition.validate(condition_value, condition_field, all_values).is_ok() {
+                    if condition
+                        .validate(condition_value, condition_field, all_values)
+                        .is_ok()
+                    {
                         // Condition is met, current field is required
                         if ValueComparison::is_empty(value) {
                             Err(ValidationError::ConditionalRequired {
@@ -617,16 +620,23 @@ impl ValidationCondition {
                 }
             }
 
-            Self::RequiredUnless { field: condition_field, condition } => {
+            Self::RequiredUnless {
+                field: condition_field,
+                condition,
+            } => {
                 if let Some(condition_value) = all_values.get(condition_field) {
                     // Check if the condition is NOT met
-                    if condition.validate(condition_value, condition_field, all_values).is_err() {
+                    if condition
+                        .validate(condition_value, condition_field, all_values)
+                        .is_err()
+                    {
                         // Condition is NOT met, current field is required
                         if ValueComparison::is_empty(value) {
                             Err(ValidationError::ConditionalRequired {
                                 field: field.clone(),
                                 condition_field: condition_field.clone(),
-                                condition_description: "does not meet the specified condition".to_string(),
+                                condition_description: "does not meet the specified condition"
+                                    .to_string(),
                             })
                         } else {
                             Ok(())
@@ -648,16 +658,23 @@ impl ValidationCondition {
                 }
             }
 
-            Self::ForbiddenIf { field: condition_field, condition } => {
+            Self::ForbiddenIf {
+                field: condition_field,
+                condition,
+            } => {
                 if let Some(condition_value) = all_values.get(condition_field) {
                     // Check if the condition is met
-                    if condition.validate(condition_value, condition_field, all_values).is_ok() {
+                    if condition
+                        .validate(condition_value, condition_field, all_values)
+                        .is_ok()
+                    {
                         // Condition is met, current field must be empty
                         if ValueComparison::is_not_empty(value) {
                             Err(ValidationError::ConditionalRequired {
                                 field: field.clone(),
                                 condition_field: condition_field.clone(),
-                                condition_description: "is forbidden when condition is met".to_string(),
+                                condition_description: "is forbidden when condition is met"
+                                    .to_string(),
                             })
                         } else {
                             Ok(())
@@ -672,7 +689,8 @@ impl ValidationCondition {
 
             // Group validations
             Self::OneOf(fields) => {
-                let non_empty_count = fields.iter()
+                let non_empty_count = fields
+                    .iter()
                     .filter_map(|f| all_values.get(f))
                     .filter(|v| ValueComparison::is_not_empty(v))
                     .count();
@@ -688,7 +706,8 @@ impl ValidationCondition {
             }
 
             Self::AllOrNone(fields) => {
-                let non_empty_count = fields.iter()
+                let non_empty_count = fields
+                    .iter()
                     .filter_map(|f| all_values.get(f))
                     .filter(|v| ValueComparison::is_not_empty(v))
                     .count();
@@ -704,7 +723,8 @@ impl ValidationCondition {
             }
 
             Self::MutuallyExclusive(fields) => {
-                let non_empty_count = fields.iter()
+                let non_empty_count = fields
+                    .iter()
                     .filter_map(|f| all_values.get(f))
                     .filter(|v| ValueComparison::is_not_empty(v))
                     .count();
@@ -720,9 +740,11 @@ impl ValidationCondition {
             }
 
             Self::AllRequired(fields) => {
-                let missing_fields: Vec<ParameterKey> = fields.iter()
+                let missing_fields: Vec<ParameterKey> = fields
+                    .iter()
                     .filter(|f| {
-                        all_values.get(f)
+                        all_values
+                            .get(f)
                             .map(|v| ValueComparison::is_empty(v))
                             .unwrap_or(true) // Missing field counts as empty
                     })
@@ -733,7 +755,10 @@ impl ValidationCondition {
                     Ok(())
                 } else {
                     Err(ValidationError::GroupValidationFailed {
-                        rule_description: format!("All fields must be filled. Missing: {:?}", missing_fields),
+                        rule_description: format!(
+                            "All fields must be filled. Missing: {:?}",
+                            missing_fields
+                        ),
                         fields: fields.clone(),
                     })
                 }
@@ -773,13 +798,10 @@ impl ValidationCondition {
             }
 
             // Custom validation
-            Self::Custom(validator) => {
-                validator(value, field, all_values)
-            }
+            Self::Custom(validator) => validator(value, field, all_values),
         }
     }
 }
-
 
 // Builder methods for ValidationCondition
 impl ValidationCondition {
@@ -968,8 +990,14 @@ impl ValidationCondition {
     /// Creates a custom validation condition
     pub fn custom<F>(validator: F) -> Self
     where
-        F: Fn(&ParameterValue, &ParameterKey, &HashMap<ParameterKey, ParameterValue>)
-            -> Result<(), ValidationError> + Send + Sync + 'static,
+        F: Fn(
+                &ParameterValue,
+                &ParameterKey,
+                &HashMap<ParameterKey, ParameterValue>,
+            ) -> Result<(), ValidationError>
+            + Send
+            + Sync
+            + 'static,
     {
         Self::Custom(std::sync::Arc::new(validator))
     }
@@ -1098,11 +1126,19 @@ impl ValidationCondition {
     /// Checks if this condition involves cross-field validation
     pub fn is_cross_field(&self) -> bool {
         match self {
-            Self::EqualsField(_) | Self::NotEqualsField(_) |
-            Self::GreaterThanField(_) | Self::LessThanField(_) |
-            Self::GreaterThanOrEqualField(_) | Self::LessThanOrEqualField(_) |
-            Self::RequiredIf { .. } | Self::RequiredUnless { .. } | Self::ForbiddenIf { .. } |
-            Self::OneOf(_) | Self::AllOrNone(_) | Self::MutuallyExclusive(_) | Self::AllRequired(_) => true,
+            Self::EqualsField(_)
+            | Self::NotEqualsField(_)
+            | Self::GreaterThanField(_)
+            | Self::LessThanField(_)
+            | Self::GreaterThanOrEqualField(_)
+            | Self::LessThanOrEqualField(_)
+            | Self::RequiredIf { .. }
+            | Self::RequiredUnless { .. }
+            | Self::ForbiddenIf { .. }
+            | Self::OneOf(_)
+            | Self::AllOrNone(_)
+            | Self::MutuallyExclusive(_)
+            | Self::AllRequired(_) => true,
 
             Self::And(conditions) | Self::Or(conditions) => {
                 conditions.iter().any(|c| c.is_cross_field())
@@ -1116,21 +1152,26 @@ impl ValidationCondition {
     /// Collects all fields that this condition depends on
     pub fn collect_dependent_fields(&self, fields: &mut Vec<ParameterKey>) {
         match self {
-            Self::EqualsField(f) | Self::NotEqualsField(f) |
-            Self::GreaterThanField(f) | Self::LessThanField(f) |
-            Self::GreaterThanOrEqualField(f) | Self::LessThanOrEqualField(f) => {
+            Self::EqualsField(f)
+            | Self::NotEqualsField(f)
+            | Self::GreaterThanField(f)
+            | Self::LessThanField(f)
+            | Self::GreaterThanOrEqualField(f)
+            | Self::LessThanOrEqualField(f) => {
                 fields.push(f.clone());
             }
 
-            Self::RequiredIf { field, condition } |
-            Self::RequiredUnless { field, condition } |
-            Self::ForbiddenIf { field, condition } => {
+            Self::RequiredIf { field, condition }
+            | Self::RequiredUnless { field, condition }
+            | Self::ForbiddenIf { field, condition } => {
                 fields.push(field.clone());
                 condition.collect_dependent_fields(fields);
             }
 
-            Self::OneOf(fs) | Self::AllOrNone(fs) |
-            Self::MutuallyExclusive(fs) | Self::AllRequired(fs) => {
+            Self::OneOf(fs)
+            | Self::AllOrNone(fs)
+            | Self::MutuallyExclusive(fs)
+            | Self::AllRequired(fs) => {
                 fields.extend(fs.iter().cloned());
             }
 
@@ -1245,8 +1286,6 @@ impl ParameterValidationBuilder {
         self.with_rule(ValidationCondition::in_list(values))
     }
 
-
-
     /// Adds a "contains" validation
     pub fn contains<T: Into<Value>>(self, substring: T) -> Self {
         self.with_rule(ValidationCondition::contains(substring))
@@ -1297,8 +1336,14 @@ impl ParameterValidationBuilder {
     /// Adds a custom validation
     pub fn custom<F>(self, validator: F) -> Self
     where
-        F: Fn(&ParameterValue, &ParameterKey, &HashMap<ParameterKey, ParameterValue>)
-            -> Result<(), ValidationError> + Send + Sync + 'static,
+        F: Fn(
+                &ParameterValue,
+                &ParameterKey,
+                &HashMap<ParameterKey, ParameterValue>,
+            ) -> Result<(), ValidationError>
+            + Send
+            + Sync
+            + 'static,
     {
         self.with_rule(ValidationCondition::custom(validator))
     }
@@ -1353,7 +1398,8 @@ pub mod validators {
             .min_length(min_length);
 
         if require_special {
-            builder = builder.regex(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]");
+            builder =
+                builder.regex(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]");
         }
 
         builder.build()
@@ -1368,7 +1414,10 @@ pub mod validators {
     }
 
     /// Required string with length constraints
-    pub fn required_string(min_length: Option<usize>, max_length: Option<usize>) -> ParameterValidation {
+    pub fn required_string(
+        min_length: Option<usize>,
+        max_length: Option<usize>,
+    ) -> ParameterValidation {
         let mut builder = ParameterValidation::builder().required();
 
         if let Some(min) = min_length {
@@ -1412,8 +1461,8 @@ pub mod validators {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::value::Value;
     use crate::parameter::ParameterValue;
+    use crate::value::Value;
 
     #[test]
     fn test_basic_validation() {
@@ -1448,15 +1497,22 @@ mod tests {
         let password_field = ParameterKey::new("password").unwrap();
 
         let mut values = HashMap::new();
-        values.insert(password_field, ParameterValue::new(Value::string("secret123")));
+        values.insert(
+            password_field,
+            ParameterValue::new(Value::string("secret123")),
+        );
 
         // Matching passwords
         let matching_value = ParameterValue::new(Value::string("secret123"));
-        assert!(validation.validate(&matching_value, &field, &values).is_ok());
+        assert!(validation
+            .validate(&matching_value, &field, &values)
+            .is_ok());
 
         // Non-matching passwords
         let non_matching_value = ParameterValue::new(Value::string("different"));
-        assert!(validation.validate(&non_matching_value, &field, &values).is_err());
+        assert!(validation
+            .validate(&non_matching_value, &field, &values)
+            .is_err());
     }
 
     #[test]
@@ -1464,7 +1520,7 @@ mod tests {
         let validation = ParameterValidation::builder()
             .required_if(
                 ParameterKey::new("notification_type").unwrap(),
-                ValidationCondition::equals("email")
+                ValidationCondition::equals("email"),
             )
             .build();
 
@@ -1474,7 +1530,10 @@ mod tests {
         let mut values = HashMap::new();
 
         // Email notification - email required
-        values.insert(notification_field.clone(), ParameterValue::new(Value::string("email")));
+        values.insert(
+            notification_field.clone(),
+            ParameterValue::new(Value::string("email")),
+        );
         let empty_email = ParameterValue::new(Value::string(""));
         assert!(validation.validate(&empty_email, &field, &values).is_err());
 
@@ -1482,7 +1541,10 @@ mod tests {
         assert!(validation.validate(&valid_email, &field, &values).is_ok());
 
         // SMS notification - email not required
-        values.insert(notification_field, ParameterValue::new(Value::string("sms")));
+        values.insert(
+            notification_field,
+            ParameterValue::new(Value::string("sms")),
+        );
         assert!(validation.validate(&empty_email, &field, &values).is_ok());
     }
 
@@ -1506,11 +1568,17 @@ mod tests {
         assert!(validation.validate(&empty_value, &field, &values).is_err());
 
         // Email provided - should pass
-        values.insert(email_field, ParameterValue::new(Value::string("test@example.com")));
+        values.insert(
+            email_field,
+            ParameterValue::new(Value::string("test@example.com")),
+        );
         assert!(validation.validate(&empty_value, &field, &values).is_ok());
 
         // Both email and phone - should pass (one_of means "at least one")
-        values.insert(phone_field, ParameterValue::new(Value::string("+1234567890")));
+        values.insert(
+            phone_field,
+            ParameterValue::new(Value::string("+1234567890")),
+        );
         assert!(validation.validate(&empty_value, &field, &values).is_ok());
     }
 
@@ -1522,10 +1590,14 @@ mod tests {
         let values = HashMap::new();
 
         let valid_email = ParameterValue::new(Value::string("test@example.com"));
-        assert!(email_validation.validate(&valid_email, &field, &values).is_ok());
+        assert!(email_validation
+            .validate(&valid_email, &field, &values)
+            .is_ok());
 
         let invalid_email = ParameterValue::new(Value::string("invalid-email"));
-        assert!(email_validation.validate(&invalid_email, &field, &values).is_err());
+        assert!(email_validation
+            .validate(&invalid_email, &field, &values)
+            .is_err());
 
         // Test password confirmation
         let password_field = ParameterKey::new("password").unwrap();
@@ -1533,12 +1605,19 @@ mod tests {
         let confirm_field = ParameterKey::new("confirm_password").unwrap();
 
         let mut values = HashMap::new();
-        values.insert(password_field, ParameterValue::new(Value::string("secret123")));
+        values.insert(
+            password_field,
+            ParameterValue::new(Value::string("secret123")),
+        );
 
         let matching_confirm = ParameterValue::new(Value::string("secret123"));
-        assert!(confirm_validation.validate(&matching_confirm, &confirm_field, &values).is_ok());
+        assert!(confirm_validation
+            .validate(&matching_confirm, &confirm_field, &values)
+            .is_ok());
 
         let non_matching_confirm = ParameterValue::new(Value::string("different"));
-        assert!(confirm_validation.validate(&non_matching_confirm, &confirm_field, &values).is_err());
+        assert!(confirm_validation
+            .validate(&non_matching_confirm, &confirm_field, &values)
+            .is_err());
     }
 }

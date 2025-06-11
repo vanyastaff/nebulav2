@@ -1,7 +1,7 @@
-use std::ops::Deref;
+use super::StringValue;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 use typetag::serde;
-use super::{StringValue, Value};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde()]
@@ -37,11 +37,9 @@ impl Deref for ModeValue {
 
 impl Into<serde_json::Value> for ModeValue {
     fn into(self) -> serde_json::Value {
-        serde_json::Value::Object(
-            serde_json::Map::from_iter([
-                ("mode".to_string(), self.mode.into()),
-                ("value".to_string(), self.value.into()),
-            ])
-        )
+        serde_json::Value::Object(serde_json::Map::from_iter([
+            ("mode".to_string(), self.mode.into()),
+            ("value".to_string(), self.value.into()),
+        ]))
     }
 }

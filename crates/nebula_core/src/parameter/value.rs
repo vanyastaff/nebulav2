@@ -1,6 +1,6 @@
+use crate::value::Value;
 use derive_more::{Deref, DerefMut, From};
 use serde::{Deserialize, Serialize};
-use crate::value::Value;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, Deref, DerefMut, From)]
 pub struct ParameterValue(pub Value);

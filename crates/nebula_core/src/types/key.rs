@@ -88,13 +88,13 @@ impl<'de, T: KeyDomain> Deserialize<'de> for Key<T> {
     }
 }
 
-
-
 /// Trait for key domain markers
 ///
 /// This trait defines the behavior for different key domains (parameter, action, node, etc.).
 /// Each domain can specify its own validation rules and normalization behavior.
-pub trait KeyDomain: 'static + Send + Sync + fmt::Debug + PartialEq + Eq + Hash + Ord + PartialOrd {
+pub trait KeyDomain:
+    'static + Send + Sync + fmt::Debug + PartialEq + Eq + Hash + Ord + PartialOrd
+{
     /// Human-readable name for this domain
     const DOMAIN_NAME: &'static str;
 
@@ -363,7 +363,10 @@ impl<T: KeyDomain> Key<T> {
         }
 
         // Check for valid characters: alphanumeric, underscore, hyphen
-        if !key.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-') {
+        if !key
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        {
             return Err(KeyParseError::InvalidCharacters);
         }
 
@@ -383,9 +386,9 @@ impl<T: KeyDomain> Key<T> {
     /// Normalize a key string according to common rules
     fn normalize(key: &str) -> String {
         let normalized = key
-            .trim()                    // Remove leading/trailing whitespace
-            .to_lowercase()            // Convert to lowercase
-            .replace('-', "_");        // Normalize hyphens to underscores
+            .trim() // Remove leading/trailing whitespace
+            .to_lowercase() // Convert to lowercase
+            .replace('-', "_"); // Normalize hyphens to underscores
 
         // Apply domain-specific normalization
         T::normalize_domain(normalized)

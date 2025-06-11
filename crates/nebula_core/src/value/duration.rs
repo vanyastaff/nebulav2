@@ -1,12 +1,24 @@
-use derive_more::{Add, Deref, Display, Div, From, Into, Mul, Sub};
+use derive_more::{Add, Deref, Div, From, Into, Mul, Sub};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 /// Duration value for time intervals
 #[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord,
-    Serialize, Deserialize, From, Into, Deref,
-    Add, Sub, Mul, Div
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Serialize,
+    Deserialize,
+    From,
+    Into,
+    Deref,
+    Add,
+    Sub,
+    Mul,
+    Div,
 )]
 pub struct DurationValue(Duration);
 
@@ -70,8 +82,6 @@ impl std::fmt::Display for DurationValue {
 
 impl Into<serde_json::Value> for DurationValue {
     fn into(self) -> serde_json::Value {
-        serde_json::Value::Number(
-            serde_json::Number::from(self.as_millis() as u64)
-        )
+        serde_json::Value::Number(serde_json::Number::from(self.as_millis() as u64))
     }
 }
