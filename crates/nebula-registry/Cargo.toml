@@ -1,0 +1,41 @@
+[package]
+name = "nebula-registry"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "plugin", "registry"]
+categories = ["development-tools"]
+description = "Plugin registry and loader for Nebula workflow engine"
+
+[dependencies]
+nebula-core = { path = "../nebula-core" }
+
+# From workspace
+tokio = { workspace = true, features = ["fs"] }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# Plugin loading
+libloading = "0.8.5"
+
+# Data structures
+indexmap = { version = "2.5", features = ["serde"] }
+parking_lot = "0.12.3"
+once_cell = "1.20"
+
+# Optional
+tracing = { workspace = true, optional = true }
+nebula-log = { path = "../nebula-log", optional = true }
+
+[features]
+default = []
+tracing = ["dep:tracing", "nebula-log", "nebula-core/tracing"]
+
+[dev-dependencies]
+tempfile = { workspace = true }

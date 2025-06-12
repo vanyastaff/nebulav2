@@ -1,0 +1,43 @@
+[package]
+name = "nebula-core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "core", "types"]
+categories = ["data-structures"]
+description = "Core traits, types, and interfaces for Nebula workflow engine"
+
+[dependencies]
+# From workspace
+tokio = { workspace = true, features = ["sync", "time"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+bytes = { workspace = true }
+
+# Crate specific
+once_cell = "1.20"
+parking_lot = "0.12.3"
+indexmap = { version = "2.5", features = ["serde"] }
+arc-swap = "1.7"
+humantime-serde = "1.1"
+
+# Optional
+tracing = { workspace = true, optional = true }
+
+[features]
+default = []
+tracing = ["dep:tracing"]
+
+[dev-dependencies]
+pretty_assertions = { workspace = true }
+tokio = { workspace = true, features = ["full", "test-util"] }

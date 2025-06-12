@@ -1,0 +1,45 @@
+[package]
+name = "nebula-ui"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "ui", "editor", "egui"]
+categories = ["gui"]
+description = "Visual workflow editor for Nebula workflow engine"
+
+[[bin]]
+name = "nebula-ui"
+path = "src/main.rs"
+
+[dependencies]
+nebula-core = { path = "../nebula-core" }
+
+# GUI
+egui = "0.28"
+eframe = { version = "0.28", features = ["persistence"] }
+egui_extras = { version = "0.28", features = ["datepicker", "image"] }
+egui_node_graph = "0.4"
+
+# HTTP client
+reqwest = { version = "0.12.8", features = ["json"] }
+
+# From workspace
+tokio = { workspace = true, features = ["rt", "macros"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+
+# Optional
+tracing = { workspace = true, optional = true }
+
+[features]
+default = []
+tracing = ["dep:tracing"]

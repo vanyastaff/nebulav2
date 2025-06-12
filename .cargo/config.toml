@@ -1,0 +1,140 @@
+# Cargo configuration for the Nebula project
+
+[build]
+# Compile-time environment variables
+rustflags = [
+    "-W", "rust-2021-compatibility",
+    "-W", "missing-debug-implementations",
+    "-W", "unreachable-pub",
+    "-C", "debuginfo=2",
+]
+# Set parallel compilation jobs
+jobs = 8
+
+# Use mold linker for faster builds (if available)
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.aarch64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+# Faster builds on macOS
+[target.x86_64-apple-darwin]
+rustflags = [
+    "-C", "split-debuginfo=unpacked",
+]
+
+[target.aarch64-apple-darwin]
+rustflags = [
+    "-C", "split-debuginfo=unpacked",
+]
+
+# Registry configuration
+[registries.crates-io]
+protocol = "sparse"
+
+# Alias commands
+[alias]
+# Development shortcuts
+d = "doc --open --no-deps"
+t = "test"
+tc = "test --features test-utils"
+c = "check --all-features"
+cl = "clippy --all-features -- -D warnings"
+b = "build --all-features"
+br = "build --release --all-features"
+r = "run --"
+rr = "run --release --"
+
+# Workspace commands
+wt = "test --workspace --all-features"
+wc = "check --workspace --all-features"
+wcl = "clippy --workspace --all-features -- -D warnings"
+wb = "build --workspace --all-features"
+wbr = "build --release --workspace --all-features"
+
+# Useful commands
+expand = "expand --theme=Dracula"
+deps = "tree --depth 2"
+outdated = "outdated -R"
+unused = "machete"
+bloat = "bloat --release --crates"
+timings = "build --timings --all-features"
+
+# Testing with different features
+test-min = "test --no-default-features"
+test-all = "test --all-features"
+
+# Security audit
+sec = "audit"
+
+# Benchmarking
+bench = "bench --all-features"
+
+# Coverage with llvm-cov
+cov = "llvm-cov --all-features --workspace --lcov --output-path lcov.info"
+cov-html = "llvm-cov --all-features --workspace --html"
+
+# Feature analysis
+features = "tree --features --depth 2"
+
+# Profile-guided optimization helpers
+pgo-gen = "run --release --features pgo-gen"
+pgo-use = "build --release --features pgo-use"
+
+[env]
+# Default environment variables
+RUST_LOG = "nebula=debug,info"
+RUST_BACKTRACE = "1"
+
+# Incremental compilation
+[profile.dev]
+incremental = true
+
+# Optimized dev builds for dependencies
+[profile.dev.package."*"]
+opt-level = 3
+
+# Custom profile for testing
+[profile.test]
+opt-level = 1
+debug = true
+
+# Custom profile for benchmarking
+[profile.bench]
+lto = "thin"
+codegen-units = 1
+
+# Release profile optimizations
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "debuginfo"
+
+# Profile for maximum performance (slower builds)
+[profile.release-max]
+inherits = "release"
+lto = "fat"
+codegen-units = 1
+
+# Profile for profiling
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = false
+
+# Network configuration
+[net]
+retry = 3
+timeout = 60
+offline = false
+
+# HTTP settings
+[http]
+timeout = 60
+multiplexing = true
+check-revoke = false
+

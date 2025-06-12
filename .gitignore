@@ -1,1 +1,155 @@
-/target
+# Rust build artifacts
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# Backup files
+*.swp
+*.swo
+*~
+.#*
+
+# IDE specific files
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Test output
+*.profraw
+*.profdata
+/lcov.info
+/coverage/
+/test-results/
+
+# Benchmark results
+/criterion/
+
+# Documentation
+/doc/
+/docs/_build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+/tmp/
+/temp/
+*.tmp
+
+# Build directories
+/dist/
+/build/
+/out/
+
+# Package files
+*.tar.gz
+*.zip
+
+# Node modules (for potential web UI)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Python (for potential scripts)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+
+# Terraform (for potential infrastructure)
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Secrets
+*.pem
+*.key
+*.crt
+*.p12
+/secrets/
+
+# Cargo registry tokens
+.cargo/credentials
+
+# Generated files
+/generated/
+*.generated.*
+
+# Plugins directory (for testing)
+/plugins/
+!/plugins/.gitkeep
+
+# Data directories
+/data/
+!/data/.gitkeep
+
+# MinIO/S3 local storage
+/.minio.sys/
+/minio-data/
+
+# PostgreSQL data
+/postgres-data/
+
+# Ignore cargo install artifacts
+/bin/
+
+# Fuzzing
+/fuzz/artifacts/
+/fuzz/corpus/
+
+# Flamegraph
+*.svg
+/flamegraph/
+
+# Memory profiling
+/massif.out.*
+/cachegrind.out.*
+/callgrind.out.*
+
+# Core dumps
+core
+core.*
+
+# WASM artifacts (if we add WASM support)
+*.wasm
+/pkg/
+
+# Release artifacts
+/release/
+/artifacts/
+
+# Local configuration overrides
+*.local.toml
+*.local.yaml
+*.local.json
+
+# Snapshot testing
+*.snap.new
+
+# Cargo expand output
+/expanded/

@@ -1,0 +1,57 @@
+[package]
+name = "nebula-worker"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "worker", "queue", "executor"]
+categories = ["asynchronous"]
+description = "Queue worker for Nebula workflow engine"
+
+[[bin]]
+name = "nebula-worker"
+path = "src/main.rs"
+
+[dependencies]
+nebula-core = { path = "../nebula-core" }
+nebula-runtime = { path = "../nebula-runtime" }
+nebula-storage = { path = "../nebula-storage" }
+nebula-storage-postgres = { path = "../nebula-storage-postgres" }
+
+# From workspace
+tokio = { workspace = true, features = ["full"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
+anyhow = { workspace = true }
+
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+
+# Configuration
+config = { version = "0.14", default-features = false, features = ["toml"] }
+dotenvy = "0.15"
+
+# Health check endpoint
+axum = { version = "0.7.7", optional = true }
+tower = { version = "0.5.1", optional = true }
+
+# Optional
+tracing = { workspace = true, optional = true }
+nebula-log = { path = "../nebula-log", optional = true }
+
+[features]
+default = ["tracing", "health"]
+tracing = ["dep:tracing", "nebula-log", "nebula-runtime/tracing"]
+health = ["axum", "tower"]
+
+[dev-dependencies]
+tempfile = { workspace = true }
+wiremock = "0.6"

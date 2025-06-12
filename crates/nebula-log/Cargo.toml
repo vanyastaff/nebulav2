@@ -1,0 +1,29 @@
+[package]
+name = "nebula-log"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "logging", "tracing"]
+categories = ["development-tools::debugging"]
+description = "Structured logging utilities for Nebula workflow engine"
+
+[dependencies]
+# Always required
+tracing = { workspace = true }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "json", "fmt", "ansi"] }
+
+# From workspace
+serde = { workspace = true }
+serde_json = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util", "macros"] }
+tempfile = { workspace = true }
