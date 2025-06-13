@@ -55,6 +55,11 @@ impl ExpressionValue {
         Self::new(format!("{{{{ $env.{var_name} }}}}"))
     }
 
+    /// Checks if the expression is empty (contains no template)
+    pub fn is_empty(&self) -> bool {
+        self.template().is_empty()
+    }
+
     // === Accessors ===
 
     /// Gets the raw template string
