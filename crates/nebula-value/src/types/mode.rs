@@ -82,8 +82,8 @@ impl ModeValue {
     pub fn file_remote(
         key: impl Into<String>,
         storage_key: String,
-        storage_type: crate::file::StorageType,
-        metadata: crate::file::FileMetadata,
+        storage_type: crate::types::file::StorageType,
+        metadata: crate::types::file::FileMetadata,
     ) -> Self {
         Self::file(key, FileValue::from_remote(storage_key, storage_type, metadata))
     }
@@ -95,7 +95,7 @@ impl ModeValue {
         key: impl Into<String>,
         generator_id: String,
         parameters: serde_json::Value,
-        metadata: crate::file::FileMetadata,
+        metadata: crate::types::file::FileMetadata,
     ) -> Self {
         Self::file(key, FileValue::from_generator(generator_id, parameters, metadata))
     }
@@ -107,7 +107,7 @@ impl ModeValue {
         key: impl Into<String>,
         generator_id: String,
         parameters: String,
-        metadata: crate::file::FileMetadata,
+        metadata: crate::types::file::FileMetadata,
     ) -> Self {
         Self::file(key, FileValue::from_generator(generator_id, parameters, metadata))
     }

@@ -51,51 +51,22 @@
 #![warn(clippy::all)]
 #![deny(unsafe_code)]
 
-// Core modules - always available
-pub mod array;
-pub mod binary;
-pub mod boolean;
-pub mod color;
-mod comparison;
-pub mod cron;
-pub mod datetime;
-pub mod duration;
-pub mod error;
-pub mod expression;
-pub mod file;
-pub mod mode;
-pub mod number;
-pub mod object;
-pub mod regex;
-pub mod string;
 pub mod value;
+pub mod validation;
+mod types;
+pub mod error;
 
 // Re-exports - Main API
-// Value types
-pub use array::ArrayValue;
-pub use binary::BinaryValue;
-pub use boolean::BooleanValue;
-pub use color::ColorValue;
-pub use comparison::{ComparisonResult, ValueComparison};
-pub use cron::CronValue;
-pub use datetime::DateTimeValue;
-pub use duration::DurationValue;
-pub use error::{ValueError, ValueResult};
-pub use expression::ExpressionValue;
-pub use file::FileValue;
-pub use mode::ModeValue;
-pub use number::NumberValue;
-pub use object::ObjectValue;
-pub use regex::RegexValue;
-pub use string::StringValue;
+// Value type
 pub use value::Value;
+pub use error::*;
+pub use types::*;
+
 
 /// Prelude module for convenient imports
 pub mod prelude {
     pub use crate::{
-        ArrayValue, BinaryValue, BooleanValue, ColorValue, ComparisonResult, CronValue,
-        DateTimeValue, DurationValue, ExpressionValue, FileValue, ModeValue, NumberValue,
-        ObjectValue, RegexValue, StringValue, Value, ValueComparison, ValueError, ValueResult,
+        types::*, Value, ValueError, ValueResult,
     };
 }
 
@@ -107,7 +78,7 @@ pub mod json {
     //!
     //! Available when both `json` and `serde` features are enabled.
 
-    pub use serde_json::{Map, from_str, from_value, to_string, to_value, to_vec};
+    pub use serde_json::{from_str, from_value, to_string, to_value, to_vec, Map};
 
     /// Convert a Value to a serde_json::Value
     pub fn value_to_json(value: &crate::Value) -> serde_json::Result<serde_json::Value> {

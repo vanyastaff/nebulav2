@@ -444,7 +444,7 @@ impl FileValue {
     }
 
     /// Gets byte statistics (for InMemory files)
-    pub fn byte_statistics(&self) -> Option<crate::binary::ByteStatistics> {
+    pub fn byte_statistics(&self) -> Option<crate::types::binary::ByteStatistics> {
         match self {
             FileValue::InMemory { data, .. } => Some(data.byte_statistics()),
             _ => None,
