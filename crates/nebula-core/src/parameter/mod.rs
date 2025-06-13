@@ -15,3 +15,5 @@ pub use metadata::*;
 pub use parameter::*;
 pub use validation::*;
 pub use value::ParameterValue;
+
+pub use crate::types::ParameterKey;

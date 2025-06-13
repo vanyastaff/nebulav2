@@ -61,70 +61,38 @@ impl_downcast!(Parameter);
 clone_trait_object!(Parameter);
 
 
-
-#[derive(Resouce]
-pub struct TelegramResource {...}
-
 #[derive(Parameters)]
-pub struct TelegramSendMessage {
-    #[text(requred)]
-    pub chat_id: String,
+struct User {
+    #[text(name = "First_name", key = "fisrtname", required = true)]
+    #[validation(min_length = 1, max_length = 255)]
+    fisrt_name: String,
+    
+    
+    #[text(name = "Lastname", key = "lastname", required = true)]
+    #[validation(min_length = 1, max_length = 255)]
+    last_name: String,
+    
+    #[text(name = "Fullname", key = "fullname", required = false)]
+    #[validation(min_length = 1, max_length = 255)]
+    full_name: Option<String>,
 }
 
-#[derive(Actioon)]
-#[action(name = "Send Telegram Message", key = "send_telegram_message", decscription = "Sends a message to a Telegram chat")]
-pub struct SendTelegramMessageAction;
-
-impl Plugin for SendTelegramMessageAction {
-    build() {
-        ctx.add_rescources(TelegramResource)
+impl User {
+    pub fn new(fisrt_name: String, last_name: String) -> Self {} // Dont alllow any constructors
+    
+    fn full_name(&self) -> String { // ALlOOW
+        format!("{} {}", self.fisrt_name, self.last_name)
     }
-}
-
-impl Action for SendTelegramMessageAction {
-    type Input = TelegramSendMessage;
-    type Output = ();
-
-    async fn execute<C>(
-        &self,
-        context: &C,
-        input: Self::Input,
-    ) -> Result<engine::ActionResult<Self::Output>, engine::ActionError>
-    where
-        C: engine::ProcessContext + Send + Sync,
-    {
-        let telegram = context.get_resource::<TelegramResource>()?;
-        telegram.send_message(input.chat_id, "Hello from Nebula!").await?;
-        Ok(engine::ActionResult::Value(()))
-    }
-
-    fn supports_rollback(&self) -> bool {
-        false
-    }
-}
-
-#[derive(Node)]
-pub struct SendTelegramMessageNode;
-
-
-impl Node for SendTelegramMessageNode {
-    actions() -> Vec<Box<dyn Action>> {
-        vec![Box::new(SendTelegramMessageAction)]
+    
+    fn reverse_name(&self) -> String {
+        format!("{} {}", self.last_name, self.fisrt_name)
     }
 }
 
 
-impl Plugin for SendTelegramMessageNode {
-    fn build(&self, ctx: &mut PluginContext) {
-        ctx.add_plugins(TelegramPlugin);
-    }
+async fn execute(&self, context: &C, input: Self::Input) -> Result<...> {
+    input.full_name = "dsfsdfs"; // dont allow chenge input parameter directly
+    let mut request = input.clone(); // IS OK
 }
 
-#[derive(Plugin)]
-pub struct TelegramPlugin;
-impl Plugin for TelegramPlugin {
-    fn build(&self, ctx: &mut PluginContext) {
-        ctx.add_plugin(LoginPlugin);
-        ctx.add_systems(Fatal, send_telemetry);
-    }
-}
+

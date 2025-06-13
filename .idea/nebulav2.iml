@@ -6,13 +6,16 @@
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-api/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-core/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/nebula-expressions/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-log/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-registry/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-runtime/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-storage-postgres/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-storage/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/nebula-template/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-ui/examples" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-ui/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/crates/nebula-value/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/crates/nebula-worker/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

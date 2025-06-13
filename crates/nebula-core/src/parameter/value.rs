@@ -1,5 +1,5 @@
-use crate::value::Value;
 use serde::{Deserialize, Serialize};
+use nebula_value::Value;
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct ParameterValue(pub Value);

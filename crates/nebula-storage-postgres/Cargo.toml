@@ -30,13 +30,9 @@ anyhow = { workspace = true }
 
 # Database specific
 tokio-postgres = { version = "0.7.12", features = ["with-chrono-0_4", "with-serde_json-1", "with-uuid-1"] }
-deadpool-postgres = "0.14.0"
+deadpool-postgres = "0.14.1"
 postgres-types = { version = "0.2.8", features = ["derive"] }
-refinery = { version = "0.8.14", features = ["tokio-postgres"] }
-
-# S3 specific
-aws-sdk-s3 = "1.52"
-aws-config = { version = "1.5", features = ["behavior-version-latest"] }
+refinery = { version = "0.8.16", features = ["tokio-postgres"] }
 
 # Optional
 tracing = { workspace = true, optional = true }
@@ -47,4 +43,4 @@ tracing = ["dep:tracing", "nebula-storage/tracing"]
 
 [dev-dependencies]
 tempfile = { workspace = true }
-testcontainers = "0.16"
+testcontainers = "0.24"

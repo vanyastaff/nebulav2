@@ -10,6 +10,8 @@ members = [
     "crates/nebula-api",
     "crates/nebula-worker",
     "crates/nebula-ui",
+    "crates/nebula-template",
+    "crates/nebula-value",
 ]
 resolver = "3"
 

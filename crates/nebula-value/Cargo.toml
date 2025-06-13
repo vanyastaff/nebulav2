@@ -1,0 +1,54 @@
+[package]
+name = "nebula-value"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+keywords = ["workflow", "value", "types", "serde"]
+categories = ["data-structures", "encoding"]
+description = "Value type system for Nebula workflow engine"
+
+[dependencies]
+# From workspace
+chrono = { workspace = true, features = ["serde"] }
+regex = { version = "1.11.1"}
+thiserror = { workspace = true }
+
+# For binary data handling
+base64 = "0.22"
+
+# Optional features
+serde = { workspace = true, optional = true }
+serde_bytes = {version = "0.11.17", optional = true}
+serde_regex = {version = "1.1.0", optional = true}
+serde_json = { workspace = true, optional = true }
+indexmap = { version = "2.5", features = ["serde"], optional = true }
+
+[features]
+default = ["std"]
+std = []
+serde = ["dep:serde"]
+json = ["serde", "serde_json", "serde_bytes", "serde_regex"]
+collections = ["indexmap"]
+full = ["serde", "json", "collections"]
+
+[dev-dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_bytes = {version = "0.11.17"}
+serde_regex = {version = "1.1.0"}
+indexmap = { version = "2.5", features = ["serde"] }
+
+# For testing
+criterion = { version = "0.5", features = ["html_reports"] }
+proptest = "1.5"
+
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

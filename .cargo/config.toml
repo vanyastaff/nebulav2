@@ -126,15 +126,3 @@ inherits = "release"
 debug = true
 strip = false
 
-# Network configuration
-[net]
-retry = 3
-timeout = 60
-offline = false
-
-# HTTP settings
-[http]
-timeout = 60
-multiplexing = true
-check-revoke = false
-
