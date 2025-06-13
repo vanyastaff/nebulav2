@@ -249,17 +249,17 @@ impl StringValue {
             )));
         }
 
-        let mut chars = self.0.char_indices();
-        let start_byte =
-            if start == 0 { 0 } else { chars.nth(start).map(|(i, _)| i).unwrap_or(self.0.len()) };
+        if start == end {
+            return Ok(StringValue::empty());
+        }
 
-        let end_byte = if end == char_count {
-            self.0.len()
-        } else {
-            chars.nth(end.saturating_sub(start + 1)).map(|(i, _)| i).unwrap_or(self.0.len())
-        };
+        let substring: String = self.0
+            .chars()
+            .skip(start)           
+            .take(end - start)  
+            .collect();
 
-        Ok(StringValue::new(self.0[start_byte..end_byte].to_string()))
+        Ok(StringValue::new(substring))
     }
 
     /// Returns the first n characters

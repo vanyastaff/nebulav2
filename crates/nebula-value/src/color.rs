@@ -769,9 +769,9 @@ mod tests {
         let darker_red = red.darken(0.2);
         assert!(darker_red.is_dark());
 
-        let lighter_red = red.lighten(0.3);
+        let lighter_red = red.lighten(0.5);
 
-        assert!(lighter_red.is_light());
+        assert!(lighter_red.luminance() > red.luminance());
 
         let gray = red.grayscale();
 

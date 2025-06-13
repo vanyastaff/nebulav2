@@ -241,7 +241,7 @@ impl CronValue {
     #[must_use]
     pub fn is_production_safe(&self) -> bool {
         // Avoid expressions that run too frequently (more than once per minute)
-        !self.expression.starts_with("*") && !self.runs_every_second()
+        !self.expression.starts_with("* ") && !self.runs_every_second()
     }
 
     /// Check if this cron runs every second (which would be excessive)
@@ -255,13 +255,14 @@ impl CronValue {
     #[must_use]
     pub fn is_reasonable_frequency(&self) -> bool {
         // Allow minimum 1-minute intervals for workflow scheduling
-        if self.expression.starts_with("*") {
+        if self.expression.starts_with("* ") {
             return false; // Every minute might be too frequent
         }
 
         // Check for very frequent intervals
         if let Some(interval) = self.extract_minute_interval() {
-            interval >= 5 // At least every 5 minutes
+            let result = interval >= 5;
+            result // At least every 5 minutes
         } else {
             true // Non-interval expressions are generally reasonable
         }
@@ -271,8 +272,12 @@ impl CronValue {
     #[must_use]
     pub fn extract_minute_interval(&self) -> Option<u32> {
         let parts = self.parts();
+
         if parts.minute.starts_with("*/") {
-            parts.minute.strip_prefix("*/")?.parse().ok()
+            let interval_str = parts.minute.strip_prefix("*/")?;
+            let interval = interval_str.parse().ok()?;
+
+            Some(interval)
         } else {
             None
         }
@@ -697,6 +702,10 @@ mod tests {
         assert!(!cron.is_production_safe()); // Too frequent
 
         let reasonable = CronValue::every_n_minutes(10).unwrap();
+        assert!(reasonable.is_reasonable_frequency());
+
+        assert!(reasonable.is_production_safe());
+
         assert!(reasonable.is_reasonable_frequency());
     }
 

@@ -164,13 +164,13 @@ impl ObjectValue {
     /// Gets a value by key with error handling
     pub fn try_get(&self, key: &str) -> ValueResult<&Value> {
         self.get(key)
-            .ok_or_else(|| ValueError::custom(format!("Key '{}' not found in object", key)))
+            .ok_or_else(|| ValueError::key_not_found(key))
     }
 
     /// Gets a mutable reference to a value by key with error handling
     pub fn try_get_mut(&mut self, key: &str) -> ValueResult<&mut Value> {
         self.get_mut(key)
-            .ok_or_else(|| ValueError::custom(format!("Key '{}' not found in object", key)))
+            .ok_or_else(|| ValueError::key_not_found(key))
     }
 
     /// Gets a value by index (insertion order) - only available with collections feature
