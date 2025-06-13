@@ -388,9 +388,7 @@ impl CronExpression {
             })?;
 
             if start < min || start > max || end < min || end > max || start > end {
-                return Err(ValueError::custom(format!(
-                    "Invalid range in {name}: {start}-{end}"
-                )));
+                return Err(ValueError::custom(format!("Invalid range in {name}: {start}-{end}")));
             }
             return Ok(());
         }
