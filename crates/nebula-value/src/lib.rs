@@ -10,11 +10,15 @@
 //!
 //! The main [`Value`] enum represents all possible value types:
 //!
-//! - **Primitives**: [`String`](StringValue), [`Number`](NumberValue), [`Boolean`](BooleanValue)
+//! - **Primitives**: [`String`](StringValue), [`Number`](NumberValue),
+//!   [`Boolean`](BooleanValue)
 //! - **Collections**: [`Array`](ArrayValue), [`Object`](ObjectValue)
-//! - **Time**: [`DateTime`](DateTimeValue), [`Duration`](DurationValue), [`Cron`](CronValue)
-//! - **Special**: [`Binary`](BinaryValue), [`File`](FileValue), [`Color`](ColorValue)
-//! - **Advanced**: [`Expression`](ExpressionValue), [`Regex`](RegexValue), [`Group`](GroupValue), [`Mode`](ModeValue)
+//! - **Time**: [`DateTime`](DateTimeValue), [`Duration`](DurationValue),
+//!   [`Cron`](CronValue)
+//! - **Special**: [`Binary`](BinaryValue), [`File`](FileValue),
+//!   [`Color`](ColorValue)
+//! - **Advanced**: [`Expression`](ExpressionValue), [`Regex`](RegexValue),
+//!   [`Group`](GroupValue), [`Mode`](ModeValue)
 //!
 //! ## Features
 //!
@@ -26,7 +30,7 @@
 //! ## Examples
 //!
 //! ```rust
-//! use nebula_value::{Value, NumberValue};
+//! use nebula_value::{NumberValue, Value};
 //!
 //! // Create values
 //! let text = Value::string("hello");
@@ -66,8 +70,6 @@ pub mod string;
 pub mod value;
 
 // Re-exports - Main API
-pub use value::Value;
-
 // Value types
 pub use array::ArrayValue;
 pub use binary::BinaryValue;
@@ -76,6 +78,8 @@ pub use color::ColorValue;
 pub use cron::CronValue;
 pub use datetime::DateTimeValue;
 pub use duration::DurationValue;
+// Error types
+pub use error::{ValueError, ValueResult};
 pub use expression::ExpressionValue;
 pub use file::FileValue;
 pub use mode::ModeValue;
@@ -83,9 +87,7 @@ pub use number::NumberValue;
 pub use object::ObjectValue;
 pub use regex::RegexValue;
 pub use string::StringValue;
-
-// Error types
-pub use error::{ValueError, ValueResult};
+pub use value::Value;
 
 /// Prelude module for convenient imports
 pub mod prelude {

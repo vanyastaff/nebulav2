@@ -1,9 +1,10 @@
+use std::collections::HashSet;
+use std::fmt::Display;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use std::collections::HashSet;
-use std::fmt::Display;
 
 /// Expression value for dynamic evaluation in workflows
 /// Supports template syntax: "Hello {{ $node('user_data').json.name }}!"
@@ -242,8 +243,7 @@ impl ExpressionValue {
     fn parse_env_reference(&self, expr: &str) -> Option<String> {
         // Parse $env.VAR_NAME pattern
         let trimmed = expr.trim();
-        if trimmed.starts_with("$env.") {
-            let var_name = &trimmed[5..]; // Skip "$env."
+        if let Some(var_name) = trimmed.strip_prefix("$env.") {
             // Extract until first non-alphanumeric character (except underscore)
             let end_pos =
                 var_name.find(|c: char| !c.is_alphanumeric() && c != '_').unwrap_or(var_name.len());

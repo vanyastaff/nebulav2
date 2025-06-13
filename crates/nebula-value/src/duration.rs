@@ -1,10 +1,11 @@
+use std::fmt;
+use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
+use std::time::Duration;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use std::fmt;
-use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
-use std::time::Duration;
 
 /// Duration value for time intervals with rich functionality
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]

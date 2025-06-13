@@ -1,14 +1,14 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-use crate::{BinaryValue, ValueError, ValueResult};
-
-use chrono::{DateTime, Utc};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::hash::Hash;
 use std::path::PathBuf;
 use std::time::Duration;
+
+use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{BinaryValue, ValueError, ValueResult};
 
 /// File value with flattened structure - no nested location object
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
@@ -157,16 +157,12 @@ mod optional_duration_seconds {
     use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
     pub fn serialize<S>(duration: &Option<u64>, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    where S: Serializer {
         duration.serialize(serializer)
     }
 
     pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    where D: Deserializer<'de> {
         Option::<u64>::deserialize(deserializer)
     }
 }

@@ -1,10 +1,12 @@
-use crate::{ValueError, ValueResult};
-use regex::{Captures, Regex};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::hash::Hash;
 use std::str::FromStr;
+
+use regex::{Captures, Regex};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+
+use crate::{ValueError, ValueResult};
 
 /// Regular expression value with rich pattern matching functionality
 #[derive(Debug, Clone)]
@@ -17,9 +19,7 @@ pub struct RegexValue {
 #[cfg(feature = "serde")]
 impl Serialize for RegexValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
+    where S: Serializer {
         self.pattern.serialize(serializer)
     }
 }
@@ -28,9 +28,7 @@ impl Serialize for RegexValue {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for RegexValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
+    where D: Deserializer<'de> {
         let pattern = String::deserialize(deserializer)?;
         RegexValue::new(pattern).map_err(serde::de::Error::custom)
     }
@@ -69,7 +67,8 @@ impl RegexValue {
         Self::new(dotall_pattern)
     }
 
-    /// Creates a regex with extended mode (ignore whitespace and allow comments)
+    /// Creates a regex with extended mode (ignore whitespace and allow
+    /// comments)
     pub fn new_extended(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref();
         let extended_pattern = format!("(?x){}", pattern_str);
@@ -271,9 +270,7 @@ impl RegexValue {
 
     /// Replace matches using a closure
     pub fn replace_all_with<F>(&self, text: &str, replacer: F) -> String
-    where
-        F: Fn(&RegexCaptures) -> String,
-    {
+    where F: Fn(&RegexCaptures) -> String {
         let mut result = String::new();
         let mut last_end = 0;
 

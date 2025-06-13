@@ -1,12 +1,13 @@
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-use crate::{ValueError, ValueResult};
 use std::cmp::Ordering;
 use std::fmt;
 use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use std::str::FromStr;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{ValueError, ValueResult};
 
 /// Number value type supporting both integers and floating-point numbers
 #[derive(Debug, Clone, Copy)]
@@ -63,9 +64,7 @@ impl NumberValue {
     #[inline]
     #[must_use]
     pub fn from_int<T>(value: T) -> Self
-    where
-        T: Into<i64>,
-    {
+    where T: Into<i64> {
         Self::Integer(value.into())
     }
 
@@ -111,7 +110,8 @@ impl NumberValue {
         Self::Integer(value as i64)
     }
 
-    /// Creates NumberValue from usize (const version, may truncate on 32-bit systems)
+    /// Creates NumberValue from usize (const version, may truncate on 32-bit
+    /// systems)
     #[inline]
     #[must_use]
     pub const fn from_usize(value: usize) -> Self {
@@ -477,7 +477,7 @@ impl NumberValue {
     /// Arcsine
     pub fn asin(&self) -> ValueResult<Self> {
         let value = self.as_f64();
-        if value < -1.0 || value > 1.0 {
+        if !(-1.0..=1.0).contains(&value) {
             return Err(ValueError::custom("asin domain error: value must be in [-1, 1]"));
         }
         Ok(Self::Float(value.asin()))
@@ -486,7 +486,7 @@ impl NumberValue {
     /// Arccosine
     pub fn acos(&self) -> ValueResult<Self> {
         let value = self.as_f64();
-        if value < -1.0 || value > 1.0 {
+        if !(-1.0..=1.0).contains(&value) {
             return Err(ValueError::custom("acos domain error: value must be in [-1, 1]"));
         }
         Ok(Self::Float(value.acos()))
@@ -815,7 +815,7 @@ impl Eq for NumberValue {}
 impl PartialOrd for NumberValue {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.as_f64().partial_cmp(&other.as_f64())
+        Some(self.cmp(other))
     }
 }
 
@@ -827,7 +827,6 @@ impl Ord for NumberValue {
 }
 
 /// === Hash Implementation ===
-
 impl Hash for NumberValue {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
@@ -838,7 +837,6 @@ impl Hash for NumberValue {
 }
 
 // === From implementations ===
-
 impl From<i8> for NumberValue {
     #[inline]
     fn from(value: i8) -> Self {

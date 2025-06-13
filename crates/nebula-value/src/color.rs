@@ -1,12 +1,13 @@
+use std::fmt;
+use std::str::FromStr;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
 
-use std::fmt;
-use std::str::FromStr;
-
-/// Color value supporting multiple formats and color spaces with rich functionality
+/// Color value supporting multiple formats and color spaces with rich
+/// functionality
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ColorValue {
     /// RGBA values (0-255 each)
@@ -20,9 +21,7 @@ pub struct ColorValue {
 #[cfg(feature = "serde")]
 impl Serialize for ColorValue {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
+    where S: serde::Serializer {
         self.to_hex_lowercase().serialize(serializer)
     }
 }
@@ -31,9 +30,7 @@ impl Serialize for ColorValue {
 #[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for ColorValue {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
+    where D: serde::Deserializer<'de> {
         let s = String::deserialize(deserializer)?;
         ColorValue::parse(s).map_err(serde::de::Error::custom)
     }

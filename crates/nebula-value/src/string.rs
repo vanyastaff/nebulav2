@@ -1,10 +1,12 @@
-use crate::{ValueError, ValueResult};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use std::borrow::{Borrow, Cow};
 use std::fmt;
 use std::ops::{Add, Deref, DerefMut};
 use std::str::FromStr;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{ValueError, ValueResult};
 
 /// String value type with efficient operations and conversions
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -253,11 +255,7 @@ impl StringValue {
             return Ok(StringValue::empty());
         }
 
-        let substring: String = self.0
-            .chars()
-            .skip(start)           
-            .take(end - start)  
-            .collect();
+        let substring: String = self.0.chars().skip(start).take(end - start).collect();
 
         Ok(StringValue::new(substring))
     }

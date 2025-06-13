@@ -1,10 +1,11 @@
+use std::fmt;
+use std::str::FromStr;
+
+use chrono::{DateTime, Datelike, Duration as ChronoDuration, Timelike, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use chrono::{DateTime, Datelike, Duration as ChronoDuration, Timelike, Utc};
-use std::fmt;
-use std::str::FromStr;
 
 /// Cron expression value for scheduling with rich functionality
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -82,7 +83,7 @@ impl CronValue {
 
     /// Creates a cron expression that runs monthly on specified day and time
     pub fn monthly_at(day: u32, hour: u32, minute: u32) -> ValueResult<Self> {
-        if day < 1 || day > 31 {
+        if !(1..=31).contains(&day) {
             return Err(ValueError::custom("Day must be 1-31"));
         }
         if hour > 23 {
@@ -251,7 +252,8 @@ impl CronValue {
         false
     }
 
-    /// Check if the cron expression might be too frequent for workflow scheduling
+    /// Check if the cron expression might be too frequent for workflow
+    /// scheduling
     #[must_use]
     pub fn is_reasonable_frequency(&self) -> bool {
         // Allow minimum 1-minute intervals for workflow scheduling
@@ -261,8 +263,7 @@ impl CronValue {
 
         // Check for very frequent intervals
         if let Some(interval) = self.extract_minute_interval() {
-            let result = interval >= 5;
-            result // At least every 5 minutes
+            interval >= 5 // Allow 5-minute intervals or more
         } else {
             true // Non-interval expressions are generally reasonable
         }
@@ -360,15 +361,15 @@ impl CronExpression {
     }
 
     fn validate(&self) -> ValueResult<()> {
-        self.validate_field(&self.minute, "minute", 0, 59)?;
-        self.validate_field(&self.hour, "hour", 0, 23)?;
-        self.validate_field(&self.day, "day", 1, 31)?;
-        self.validate_field(&self.month, "month", 1, 12)?;
-        self.validate_field(&self.day_of_week, "day_of_week", 0, 7)?;
+        Self::validate_field(&self.minute, "minute", 0, 59)?;
+        Self::validate_field(&self.hour, "hour", 0, 23)?;
+        Self::validate_field(&self.day, "day", 1, 31)?;
+        Self::validate_field(&self.month, "month", 1, 12)?;
+        Self::validate_field(&self.day_of_week, "day_of_week", 0, 7)?;
         Ok(())
     }
 
-    fn validate_field(&self, field: &str, name: &str, min: u32, max: u32) -> ValueResult<()> {
+    fn validate_field(field: &str, name: &str, min: u32, max: u32) -> ValueResult<()> {
         if field == "*" {
             return Ok(());
         }
@@ -412,7 +413,7 @@ impl CronExpression {
 
             // Validate the base part (before the /)
             if parts[0] != "*" {
-                self.validate_field(parts[0], name, min, max)?;
+                Self::validate_field(parts[0], name, min, max)?;
             }
             return Ok(());
         }
@@ -420,7 +421,7 @@ impl CronExpression {
         // Handle comma-separated lists (e.g., "1,3,5")
         if field.contains(',') {
             for part in field.split(',') {
-                self.validate_field(part.trim(), name, min, max)?;
+                Self::validate_field(part.trim(), name, min, max)?;
             }
             return Ok(());
         }
@@ -559,19 +560,24 @@ impl CronExpression {
             return true;
         }
 
-        // Handle step values
         if field.contains('/') {
             let parts: Vec<&str> = field.split('/').collect();
-            if parts.len() == 2 {
-                if let Ok(step) = parts[1].parse::<u32>() {
-                    if parts[0] == "*" {
-                        return value % step == 0;
-                    }
-                }
+
+            if parts.len() != 2 {
+                return false;
             }
+
+            let Ok(step) = parts[1].parse::<u32>() else {
+                return false;
+            };
+
+            if parts[0] == "*" {
+                return value % step == 0;
+            }
+
+            return false;
         }
 
-        // Handle ranges
         if field.contains('-') {
             let parts: Vec<&str> = field.split('-').collect();
             if parts.len() == 2 {
@@ -579,17 +585,14 @@ impl CronExpression {
                     return value >= start && value <= end;
                 }
             }
+            return false;
         }
 
-        // Handle lists
         if field.contains(',') {
-            return field
-                .split(',')
-                .any(|part| part.trim().parse::<u32>().map_or(false, |v| v == value));
+            return field.split(',').any(|part| part.trim().parse::<u32>() == Ok(value));
         }
 
-        // Handle single value
-        field.parse::<u32>().map_or(false, |v| v == value)
+        field.parse::<u32>() == Ok(value)
     }
 
     fn matches_day_of_week(&self, field: &str, datetime: DateTime<Utc>) -> bool {

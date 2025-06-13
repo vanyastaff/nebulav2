@@ -1,13 +1,13 @@
-use crate::{Value, ValueError, ValueResult};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use std::fmt;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 // Better approach for feature-based types
 #[cfg(feature = "collections")]
 use indexmap::IndexMap;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{Value, ValueError, ValueResult};
 #[cfg(feature = "collections")]
 type InternalMap<K, V> = IndexMap<K, V>;
 
@@ -72,9 +72,7 @@ impl ObjectValue {
 
     /// Creates an object from alternating keys and values
     pub fn from_alternating<I>(iter: I) -> ValueResult<Self>
-    where
-        I: IntoIterator<Item = Value>,
-    {
+    where I: IntoIterator<Item = Value> {
         let items: Vec<Value> = iter.into_iter().collect();
 
         if items.len() % 2 != 0 {
@@ -163,17 +161,16 @@ impl ObjectValue {
 
     /// Gets a value by key with error handling
     pub fn try_get(&self, key: &str) -> ValueResult<&Value> {
-        self.get(key)
-            .ok_or_else(|| ValueError::key_not_found(key))
+        self.get(key).ok_or_else(|| ValueError::key_not_found(key))
     }
 
     /// Gets a mutable reference to a value by key with error handling
     pub fn try_get_mut(&mut self, key: &str) -> ValueResult<&mut Value> {
-        self.get_mut(key)
-            .ok_or_else(|| ValueError::key_not_found(key))
+        self.get_mut(key).ok_or_else(|| ValueError::key_not_found(key))
     }
 
-    /// Gets a value by index (insertion order) - only available with collections feature
+    /// Gets a value by index (insertion order) - only available with
+    /// collections feature
     #[cfg(feature = "collections")]
     #[inline]
     #[must_use]
@@ -181,7 +178,8 @@ impl ObjectValue {
         self.0.get_index(index)
     }
 
-    /// Gets a mutable reference to a value by index - only available with collections feature
+    /// Gets a mutable reference to a value by index - only available with
+    /// collections feature
     #[cfg(feature = "collections")]
     #[inline]
     #[must_use]
@@ -196,7 +194,8 @@ impl ObjectValue {
         self.0.contains_key(key)
     }
 
-    /// Inserts a key-value pair, returning the previous value if the key existed
+    /// Inserts a key-value pair, returning the previous value if the key
+    /// existed
     pub fn insert(&mut self, key: String, value: Value) -> Option<Value> {
         self.0.insert(key, value)
     }
@@ -224,7 +223,8 @@ impl ObjectValue {
         }
     }
 
-    /// Removes a key-value pair by index - only available with collections feature
+    /// Removes a key-value pair by index - only available with collections
+    /// feature
     #[cfg(feature = "collections")]
     #[must_use]
     pub fn remove_index(&mut self, index: usize) -> Option<(String, Value)> {
@@ -331,35 +331,30 @@ impl ObjectValue {
 
     /// Returns an iterator over keys
     #[inline]
-    #[must_use]
     pub fn keys(&self) -> impl Iterator<Item = &String> {
         self.0.keys()
     }
 
     /// Returns an iterator over values
     #[inline]
-    #[must_use]
     pub fn values(&self) -> impl Iterator<Item = &Value> {
         self.0.values()
     }
 
     /// Returns a mutable iterator over values
     #[inline]
-    #[must_use]
     pub fn values_mut(&mut self) -> impl Iterator<Item = &mut Value> {
         self.0.values_mut()
     }
 
     /// Returns an iterator over key-value pairs
     #[inline]
-    #[must_use]
     pub fn iter(&self) -> impl Iterator<Item = (&String, &Value)> {
         self.0.iter()
     }
 
     /// Returns a mutable iterator over key-value pairs
     #[inline]
-    #[must_use]
     pub fn iter_mut(&mut self) -> impl Iterator<Item = (&String, &mut Value)> {
         self.0.iter_mut()
     }
@@ -380,18 +375,14 @@ impl ObjectValue {
 
     /// Retains only the key-value pairs that satisfy the predicate
     pub fn retain<F>(&mut self, mut f: F)
-    where
-        F: FnMut(&String, &mut Value) -> bool,
-    {
+    where F: FnMut(&String, &mut Value) -> bool {
         self.0.retain(|k, v| f(k, v));
     }
 
     /// Filters the object by keys, returning a new object
     #[must_use]
     pub fn filter_keys<P>(&self, mut predicate: P) -> Self
-    where
-        P: FnMut(&String) -> bool,
-    {
+    where P: FnMut(&String) -> bool {
         let filtered = self
             .0
             .iter()
@@ -404,9 +395,7 @@ impl ObjectValue {
     /// Filters the object by values, returning a new object
     #[must_use]
     pub fn filter_values<P>(&self, mut predicate: P) -> Self
-    where
-        P: FnMut(&Value) -> bool,
-    {
+    where P: FnMut(&Value) -> bool {
         let filtered = self
             .0
             .iter()
@@ -418,9 +407,7 @@ impl ObjectValue {
 
     /// Maps values to new values, keeping the same keys
     pub fn map_values<F>(&self, mut f: F) -> ValueResult<Self>
-    where
-        F: FnMut(&Value) -> ValueResult<Value>,
-    {
+    where F: FnMut(&Value) -> ValueResult<Value> {
         let mut result = InternalMap::new();
 
         for (k, v) in &self.0 {
@@ -432,9 +419,7 @@ impl ObjectValue {
 
     /// Maps keys to new keys, keeping the same values
     pub fn map_keys<F>(&self, mut f: F) -> ValueResult<Self>
-    where
-        F: FnMut(&String) -> ValueResult<String>,
-    {
+    where F: FnMut(&String) -> ValueResult<String> {
         let mut result = InternalMap::new();
 
         for (k, v) in &self.0 {
@@ -447,9 +432,7 @@ impl ObjectValue {
 
     /// Transforms both keys and values
     pub fn map<F>(&self, mut f: F) -> ValueResult<Self>
-    where
-        F: FnMut(&String, &Value) -> ValueResult<(String, Value)>,
-    {
+    where F: FnMut(&String, &Value) -> ValueResult<(String, Value)> {
         let mut result = InternalMap::new();
 
         for (k, v) in &self.0 {
@@ -504,45 +487,35 @@ impl ObjectValue {
     /// Finds all keys that match a predicate
     #[must_use]
     pub fn find_keys<P>(&self, mut predicate: P) -> Vec<String>
-    where
-        P: FnMut(&String, &Value) -> bool,
-    {
+    where P: FnMut(&String, &Value) -> bool {
         self.0.iter().filter(|(k, v)| predicate(k, v)).map(|(k, _)| k.clone()).collect()
     }
 
     /// Finds all values that match a predicate
     #[must_use]
     pub fn find_values<P>(&self, mut predicate: P) -> Vec<Value>
-    where
-        P: FnMut(&String, &Value) -> bool,
-    {
+    where P: FnMut(&String, &Value) -> bool {
         self.0.iter().filter(|(k, v)| predicate(k, v)).map(|(_, v)| v.clone()).collect()
     }
 
     /// Finds the first key-value pair that matches a predicate
     #[must_use]
     pub fn find<P>(&self, mut predicate: P) -> Option<(&String, &Value)>
-    where
-        P: FnMut(&String, &Value) -> bool,
-    {
+    where P: FnMut(&String, &Value) -> bool {
         self.0.iter().find(|(k, v)| predicate(k, v))
     }
 
     /// Checks if any key-value pair matches a predicate
     #[must_use]
     pub fn any<P>(&self, mut predicate: P) -> bool
-    where
-        P: FnMut(&String, &Value) -> bool,
-    {
+    where P: FnMut(&String, &Value) -> bool {
         self.0.iter().any(|(k, v)| predicate(k, v))
     }
 
     /// Checks if all key-value pairs match a predicate
     #[must_use]
     pub fn all<P>(&self, mut predicate: P) -> bool
-    where
-        P: FnMut(&String, &Value) -> bool,
-    {
+    where P: FnMut(&String, &Value) -> bool {
         self.0.iter().all(|(k, v)| predicate(k, v))
     }
 
@@ -956,7 +929,8 @@ mod tests {
         obj.insert("active".to_string(), Value::boolean(true));
 
         let flattened = obj.flatten();
-        // Note: exact keys depend on implementation, but should contain flattened structure
+        // Note: exact keys depend on implementation, but should contain flattened
+        // structure
         assert!(!flattened.is_empty());
     }
 

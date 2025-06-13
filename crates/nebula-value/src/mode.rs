@@ -1,8 +1,10 @@
-use crate::{BinaryValue, FileValue, StringValue, ValueError, ValueResult};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{BinaryValue, FileValue, StringValue, ValueError, ValueResult};
 
 /// Value structure automatically determines ultra-simplified mode value - type
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
@@ -22,7 +24,7 @@ pub enum ModeTypeValue {
     /// String value (auto-detected when JSON value is string)
     String(StringValue),
     /// File value (auto-detected when JSON value is object)
-    File(FileValue),
+    File(Box<FileValue>),
 }
 
 impl ModeValue {
@@ -40,7 +42,8 @@ impl ModeValue {
         Self::new(key, ModeTypeValue::string(value.into()))
     }
 
-    /// Creates a list mode with selected value (same as text - context determines usage)
+    /// Creates a list mode with selected value (same as text - context
+    /// determines usage)
     #[must_use]
     pub fn list(key: impl Into<String>, value: impl Into<String>) -> Self {
         Self::text(key, value) // Functionally identical to text
@@ -138,7 +141,8 @@ impl ModeValue {
     #[must_use]
     pub fn inferred_mode(&self) -> ModeType {
         match &self.value {
-            ModeTypeValue::String(_) => ModeType::Text, // Could be Text or List, context determines
+            ModeTypeValue::String(_) => ModeType::Text, // Could be Text or List, context
+            // determines
             ModeTypeValue::File(_) => ModeType::File,
         }
     }
@@ -313,21 +317,21 @@ impl ModeTypeValue {
     #[inline]
     #[must_use]
     pub fn file(value: FileValue) -> Self {
-        Self::File(value)
+        Self::File(Box::new(value))
     }
 
     /// Create a file mode value from binary data
     #[inline]
     #[must_use]
     pub fn file_from_binary(binary: BinaryValue, filename: Option<String>) -> Self {
-        Self::File(FileValue::from_binary(binary, filename))
+        Self::File(Box::new(FileValue::from_binary(binary, filename)))
     }
 
     /// Create a file mode value from bytes
     #[inline]
     #[must_use]
     pub fn file_from_bytes(data: Vec<u8>, filename: Option<String>) -> Self {
-        Self::File(FileValue::from_bytes(data, filename))
+        Self::File(Box::new(FileValue::from_bytes(data, filename)))
     }
 
     /// Check if this is a string value
@@ -530,7 +534,7 @@ impl From<BinaryValue> for ModeTypeValue {
 
 impl From<FileValue> for ModeTypeValue {
     fn from(f: FileValue) -> Self {
-        Self::File(f)
+        Self::File(Box::new(f))
     }
 }
 

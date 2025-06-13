@@ -1,13 +1,15 @@
-use crate::{Value, ValueError, ValueResult};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
 #[cfg(feature = "collections")]
 use indexmap::IndexSet;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
-/// Array value type with efficient operations and functional programming support
+use crate::{Value, ValueError, ValueResult};
+
+/// Array value type with efficient operations and functional programming
+/// support
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
@@ -217,9 +219,7 @@ impl ArrayValue {
 
     /// Retains only the elements specified by the predicate
     pub fn retain<F>(&mut self, mut f: F)
-    where
-        F: FnMut(&Value) -> bool,
-    {
+    where F: FnMut(&Value) -> bool {
         self.0.retain(|value| f(value));
     }
 
@@ -230,9 +230,7 @@ impl ArrayValue {
 
     /// Removes consecutive repeated elements using a custom comparison
     pub fn dedup_by<F>(&mut self, same_bucket: F)
-    where
-        F: FnMut(&mut Value, &mut Value) -> bool,
-    {
+    where F: FnMut(&mut Value, &mut Value) -> bool {
         self.0.dedup_by(same_bucket);
     }
 
@@ -276,9 +274,7 @@ impl ArrayValue {
     /// Returns elements up to but not including the nth element
     #[must_use]
     pub fn take_while<P>(&self, mut predicate: P) -> ArrayValue
-    where
-        P: FnMut(&Value) -> bool,
-    {
+    where P: FnMut(&Value) -> bool {
         let mut result = Vec::new();
         for value in &self.0 {
             if predicate(value) {
@@ -293,9 +289,7 @@ impl ArrayValue {
     /// Skips elements while predicate is true, returns the rest
     #[must_use]
     pub fn skip_while<P>(&self, mut predicate: P) -> ArrayValue
-    where
-        P: FnMut(&Value) -> bool,
-    {
+    where P: FnMut(&Value) -> bool {
         let mut found_false = false;
         let result: Vec<Value> = self
             .0
@@ -316,9 +310,7 @@ impl ArrayValue {
 
     /// Applies a function to each element and returns a new array
     pub fn map<F>(&self, mut f: F) -> ValueResult<ArrayValue>
-    where
-        F: FnMut(&Value) -> ValueResult<Value>,
-    {
+    where F: FnMut(&Value) -> ValueResult<Value> {
         let mut result = Vec::with_capacity(self.len());
         for value in &self.0 {
             result.push(f(value)?);
@@ -328,20 +320,16 @@ impl ArrayValue {
 
     /// Applies a fallible function and filters out errors
     #[must_use]
-    pub fn filter_map<F>(&self, mut f: F) -> ArrayValue
-    where
-        F: FnMut(&Value) -> Option<Value>,
-    {
-        let result: Vec<Value> = self.0.iter().filter_map(|value| f(value)).collect();
+    pub fn filter_map<F>(&self, f: F) -> ArrayValue
+    where F: FnMut(&Value) -> Option<Value> {
+        let result: Vec<Value> = self.0.iter().filter_map(f).collect();
         ArrayValue::new(result)
     }
 
     /// Filters elements based on a predicate
     #[must_use]
     pub fn filter<P>(&self, mut predicate: P) -> ArrayValue
-    where
-        P: FnMut(&Value) -> bool,
-    {
+    where P: FnMut(&Value) -> bool {
         let result: Vec<Value> = self.0.iter().filter(|value| predicate(value)).cloned().collect();
         ArrayValue::new(result)
     }
@@ -349,44 +337,34 @@ impl ArrayValue {
     /// Finds the first element matching a predicate
     #[must_use]
     pub fn find<P>(&self, mut predicate: P) -> Option<&Value>
-    where
-        P: FnMut(&Value) -> bool,
-    {
+    where P: FnMut(&Value) -> bool {
         self.0.iter().find(|value| predicate(value))
     }
 
     /// Finds the index of the first element matching a predicate
     #[must_use]
-    pub fn find_index<P>(&self, mut predicate: P) -> Option<usize>
-    where
-        P: FnMut(&Value) -> bool,
-    {
-        self.0.iter().position(|value| predicate(value))
+    pub fn find_index<P>(&self, predicate: P) -> Option<usize>
+    where P: FnMut(&Value) -> bool {
+        self.0.iter().position(predicate)
     }
 
     /// Returns true if any element matches the predicate
     #[must_use]
-    pub fn any<P>(&self, mut predicate: P) -> bool
-    where
-        P: FnMut(&Value) -> bool,
-    {
-        self.0.iter().any(|value| predicate(value))
+    pub fn any<P>(&self, predicate: P) -> bool
+    where P: FnMut(&Value) -> bool {
+        self.0.iter().any(predicate)
     }
 
     /// Returns true if all elements match the predicate
     #[must_use]
-    pub fn all<P>(&self, mut predicate: P) -> bool
-    where
-        P: FnMut(&Value) -> bool,
-    {
-        self.0.iter().all(|value| predicate(value))
+    pub fn all<P>(&self, predicate: P) -> bool
+    where P: FnMut(&Value) -> bool {
+        self.0.iter().all(predicate)
     }
 
     /// Reduces the array to a single value using an accumulator function
     pub fn reduce<F>(&self, mut f: F) -> ValueResult<Option<Value>>
-    where
-        F: FnMut(Value, &Value) -> ValueResult<Value>,
-    {
+    where F: FnMut(Value, &Value) -> ValueResult<Value> {
         let mut iter = self.0.iter();
         if let Some(first) = iter.next() {
             let mut acc = first.clone();
@@ -401,9 +379,7 @@ impl ArrayValue {
 
     /// Folds the array with an initial value
     pub fn fold<T, F>(&self, init: T, mut f: F) -> ValueResult<T>
-    where
-        F: FnMut(T, &Value) -> ValueResult<T>,
-    {
+    where F: FnMut(T, &Value) -> ValueResult<T> {
         let mut acc = init;
         for value in &self.0 {
             acc = f(acc, value)?;
@@ -565,7 +541,8 @@ impl ArrayValue {
         Ok(chunks)
     }
 
-    /// Removes duplicate values (preserving order when collections feature is enabled)
+    /// Removes duplicate values (preserving order when collections feature is
+    /// enabled)
     #[must_use]
     pub fn unique(&self) -> ArrayValue {
         #[cfg(feature = "collections")]
@@ -584,11 +561,12 @@ impl ArrayValue {
 
         #[cfg(not(feature = "collections"))]
         {
-            let mut seen = std::collections::HashSet::new();
+            let mut seen = std::collections::HashSet::<String>::new();
             let mut result = Vec::new();
 
             for value in &self.0 {
-                if seen.insert(value) {
+                let key = value.to_string();
+                if seen.insert(key) {
                     result.push(value.clone());
                 }
             }
@@ -666,8 +644,7 @@ impl fmt::Display for ArrayValue {
 
 // From implementations
 impl<T> From<Vec<T>> for ArrayValue
-where
-    T: Into<Value>,
+where T: Into<Value>
 {
     fn from(values: Vec<T>) -> Self {
         ArrayValue::new(values.into_iter().map(Into::into).collect::<Vec<Value>>())

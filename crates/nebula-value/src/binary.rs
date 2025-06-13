@@ -1,10 +1,13 @@
-use crate::{ValueError, ValueResult};
-use base64::{Engine as _, engine::general_purpose};
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
+
+use base64::Engine as _;
+use base64::engine::general_purpose;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+use crate::{ValueError, ValueResult};
 
 /// Binary data value type with comprehensive operations and encodings
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -636,7 +639,7 @@ impl BinaryValue {
 }
 
 /// Statistics about byte distribution in binary data
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ByteStatistics {
     /// Total length of the data
@@ -652,21 +655,6 @@ pub struct ByteStatistics {
     /// Count of the most common byte
     pub most_common_count: usize,
 }
-
-impl Default for ByteStatistics {
-    fn default() -> Self {
-        Self {
-            length: 0,
-            min_byte: 0,
-            max_byte: 0,
-            unique_bytes: 0,
-            most_common_byte: 0,
-            most_common_count: 0,
-        }
-    }
-}
-
-// === Default Implementation ===
 
 impl Default for BinaryValue {
     #[inline]

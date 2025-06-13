@@ -1,18 +1,18 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "serde")]
+use crate::error::ValueError;
 use crate::{
     ArrayValue, BinaryValue, BooleanValue, ColorValue, CronValue, DateTimeValue, DurationValue,
     ExpressionValue, FileValue, ModeValue, NumberValue, ObjectValue, RegexValue, StringValue,
 };
 
-#[cfg(feature = "serde")]
-use crate::error::ValueError;
-
 /// The main Value enum representing all possible value types in Nebula
 ///
-/// This enum supports both tagged and untagged serialization depending on context.
-/// The default serialization uses a tagged format for better type safety.
+/// This enum supports both tagged and untagged serialization depending on
+/// context. The default serialization uses a tagged format for better type
+/// safety.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "lowercase"))]
@@ -326,15 +326,15 @@ impl Value {
     #[must_use]
     pub fn display_string(&self) -> String {
         match self {
-            Self::String(s) => format!("\"{}\"", s.to_string()),
+            Self::String(s) => format!("\"{}\"", s),
             Self::Number(n) => n.to_string(),
             Self::Boolean(b) => b.to_string(),
             Self::Array(a) => format!("[array with {} items]", a.len()),
             Self::Object(o) => format!("[object with {} fields]", o.len()),
             Self::DateTime(dt) => dt.to_string(),
             Self::Duration(d) => d.to_string(),
-            Self::Mode(m) => format!("[mode: {}]", m.to_string()),
-            Self::Expression(e) => format!("{{{{ {} }}}}", e.to_string()),
+            Self::Mode(m) => format!("[mode: {}]", m),
+            Self::Expression(e) => format!("{{{{ {} }}}}", e),
             Self::Regex(r) => format!("/{}/", r.pattern()),
             Self::Color(c) => c.to_string(),
             Self::Cron(cr) => cr.to_string(),

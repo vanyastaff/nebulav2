@@ -1,9 +1,10 @@
+use std::ops::{BitAnd, BitOr, BitXor, Not};
+use std::str::FromStr;
+
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use std::ops::{BitAnd, BitOr, BitXor, Not};
-use std::str::FromStr;
 
 /// Boolean value type with extended functionality and optimization
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]

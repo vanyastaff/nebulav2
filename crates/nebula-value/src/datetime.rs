@@ -1,11 +1,13 @@
+use std::fmt;
+
+use chrono::{DateTime, Datelike, Duration as ChronoDuration, NaiveDate, NaiveTime, Timelike, Utc};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use chrono::{DateTime, Datelike, Duration as ChronoDuration, NaiveDate, NaiveTime, Timelike, Utc};
-use std::fmt;
 
-/// Date and time value supporting different precision levels with rich functionality
+/// Date and time value supporting different precision levels with rich
+/// functionality
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))] // JSON: "2024-01-01T12:00:00Z" or "2024-01-01" or "12:00:00"
@@ -455,7 +457,8 @@ impl DateTimeValue {
         }
     }
 
-    /// Check if the datetime is within a reasonable range for workflow scheduling
+    /// Check if the datetime is within a reasonable range for workflow
+    /// scheduling
     #[must_use]
     pub fn is_reasonable_schedule_time(&self) -> bool {
         match self {
