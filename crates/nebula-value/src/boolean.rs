@@ -252,8 +252,7 @@ impl BooleanValue {
             "low" | "lo" => Ok(Self(false)),
 
             _ => Err(ValueError::custom(format!(
-                "Cannot parse '{}' as boolean. Valid values: true/false, 1/0, yes/no, on/off, etc.",
-                s
+                "Cannot parse '{s}' as boolean. Valid values: true/false, 1/0, yes/no, on/off, etc."
             ))),
         }
     }
@@ -269,8 +268,7 @@ impl BooleanValue {
             "true" => Ok(Self(true)),
             "false" => Ok(Self(false)),
             _ => Err(ValueError::custom(format!(
-                "Strict parsing failed for '{}'. Only 'true' and 'false' are allowed.",
-                s
+                "Strict parsing failed for '{s}'. Only 'true' and 'false' are allowed."
             ))),
         }
     }

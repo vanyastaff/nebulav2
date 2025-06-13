@@ -68,8 +68,7 @@ impl DurationValue {
     pub fn from_secs_f64(secs: f64) -> ValueResult<Self> {
         if !secs.is_finite() || secs < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid duration: {} seconds must be finite and non-negative",
-                secs
+                "Invalid duration: {secs} seconds must be finite and non-negative"
             )));
         }
         Ok(Self(Duration::from_secs_f64(secs)))
@@ -86,8 +85,7 @@ impl DurationValue {
     pub fn from_secs_f32(secs: f32) -> ValueResult<Self> {
         if !secs.is_finite() || secs < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid duration: {} seconds must be finite and non-negative",
-                secs
+                "Invalid duration: {secs} seconds must be finite and non-negative"
             )));
         }
         Ok(Self(Duration::from_secs_f32(secs)))
@@ -296,8 +294,7 @@ impl DurationValue {
     pub fn multiply_f64(&self, factor: f64) -> ValueResult<Self> {
         if !factor.is_finite() || factor < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid factor: {} must be finite and non-negative",
-                factor
+                "Invalid factor: {factor} must be finite and non-negative"
             )));
         }
 
@@ -371,7 +368,7 @@ impl DurationValue {
         if total_nanos >= 1_000_000_000 {
             // >= 1 second
             let secs = self.as_secs_f64();
-            if secs >= 60.0 { format!("{:.1}m", secs / 60.0) } else { format!("{:.1}s", secs) }
+            if secs >= 60.0 { format!("{:.1}m", secs / 60.0) } else { format!("{secs:.1}s") }
         } else if total_nanos >= 1_000_000 {
             // >= 1 millisecond
             format!("{}ms", self.as_millis())
@@ -379,7 +376,7 @@ impl DurationValue {
             // >= 1 microsecond
             format!("{}μs", self.as_micros())
         } else {
-            format!("{}ns", total_nanos)
+            format!("{total_nanos}ns")
         }
     }
 

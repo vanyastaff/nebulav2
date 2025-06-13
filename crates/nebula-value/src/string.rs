@@ -238,16 +238,14 @@ impl StringValue {
     pub fn substring(&self, start: usize, end: usize) -> ValueResult<StringValue> {
         if start > end {
             return Err(ValueError::custom(format!(
-                "Invalid substring range: start ({}) > end ({})",
-                start, end
+                "Invalid substring range: start ({start}) > end ({end})"
             )));
         }
 
         let char_count = self.char_count();
         if start > char_count || end > char_count {
             return Err(ValueError::custom(format!(
-                "Substring indices out of bounds: start={}, end={}, length={}",
-                start, end, char_count
+                "Substring indices out of bounds: start={start}, end={end}, length={char_count}"
             )));
         }
 
@@ -311,7 +309,7 @@ impl StringValue {
         T: FromStr,
         T::Err: std::fmt::Display,
     {
-        self.0.parse::<T>().map_err(|e| ValueError::custom(format!("Parse error: {}", e)))
+        self.0.parse::<T>().map_err(|e| ValueError::custom(format!("Parse error: {e}")))
     }
 
     /// Explicit parse with type annotation (alias for parse)

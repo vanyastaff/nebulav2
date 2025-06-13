@@ -259,7 +259,7 @@ impl NumberValue {
                 {
                     Ok(*f as i64)
                 } else {
-                    Err(ValueError::custom(format!("Cannot convert {} to integer", f)))
+                    Err(ValueError::custom(format!("Cannot convert {f} to integer")))
                 }
             },
         }
@@ -271,7 +271,7 @@ impl NumberValue {
         if i64_val >= i32::MIN as i64 && i64_val <= i32::MAX as i64 {
             Ok(i64_val as i32)
         } else {
-            Err(ValueError::custom(format!("Value {} is out of range for i32", i64_val)))
+            Err(ValueError::custom(format!("Value {i64_val} is out of range for i32")))
         }
     }
 
@@ -281,7 +281,7 @@ impl NumberValue {
         if i64_val >= 0 && i64_val <= usize::MAX as i64 {
             Ok(i64_val as usize)
         } else {
-            Err(ValueError::custom(format!("Value {} is out of range for usize", i64_val)))
+            Err(ValueError::custom(format!("Value {i64_val} is out of range for usize")))
         }
     }
 
@@ -644,8 +644,7 @@ impl NumberValue {
         if let Some(min_val) = min {
             if value < min_val {
                 return Err(ValueError::custom(format!(
-                    "Value {} is less than minimum {}",
-                    value, min_val
+                    "Value {value} is less than minimum {min_val}"
                 )));
             }
         }
@@ -653,8 +652,7 @@ impl NumberValue {
         if let Some(max_val) = max {
             if value > max_val {
                 return Err(ValueError::custom(format!(
-                    "Value {} is greater than maximum {}",
-                    value, max_val
+                    "Value {value} is greater than maximum {max_val}"
                 )));
             }
         }
@@ -689,7 +687,7 @@ impl NumberValue {
                 if f.fract() == 0.0 {
                     Ok(())
                 } else {
-                    Err(ValueError::custom(format!("Value {} must be an integer", f)))
+                    Err(ValueError::custom(format!("Value {f} must be an integer")))
                 }
             },
         }
@@ -753,10 +751,10 @@ impl Default for NumberValue {
 impl fmt::Display for NumberValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Integer(i) => write!(f, "{}", i),
+            Self::Integer(i) => write!(f, "{i}"),
             Self::Float(fl) => {
                 // Format floats nicely
-                if fl.fract() == 0.0 { write!(f, "{:.0}", fl) } else { write!(f, "{}", fl) }
+                if fl.fract() == 0.0 { write!(f, "{fl:.0}") } else { write!(f, "{fl}") }
             },
         }
     }
@@ -788,10 +786,10 @@ impl FromStr for NumberValue {
             if f.is_finite() {
                 Ok(Self::Float(f))
             } else {
-                Err(ValueError::custom(format!("Invalid number: {}", s)))
+                Err(ValueError::custom(format!("Invalid number: {s}")))
             }
         } else {
-            Err(ValueError::custom(format!("Cannot parse '{}' as number", s)))
+            Err(ValueError::custom(format!("Cannot parse '{s}' as number")))
         }
     }
 }

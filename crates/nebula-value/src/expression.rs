@@ -34,25 +34,25 @@ impl ExpressionValue {
     /// Creates an expression that references a node output
     #[must_use]
     pub fn node_ref(node_id: &str, path: &str) -> Self {
-        Self::new(format!("{{{{ $node('{}').json.{} }}}}", node_id, path))
+        Self::new(format!("{{{{ $node('{node_id}').json.{path} }}}}"))
     }
 
     /// Creates an expression that references trigger data
     #[must_use]
     pub fn trigger_ref(path: &str) -> Self {
-        Self::new(format!("{{{{ $trigger.json.{} }}}}", path))
+        Self::new(format!("{{{{ $trigger.json.{path} }}}}"))
     }
 
     /// Creates an expression that references execution metadata
     #[must_use]
     pub fn execution_ref(field: &str) -> Self {
-        Self::new(format!("{{{{ $execution.{} }}}}", field))
+        Self::new(format!("{{{{ $execution.{field} }}}}"))
     }
 
     /// Creates an expression that references environment variable
     #[must_use]
     pub fn env_ref(var_name: &str) -> Self {
-        Self::new(format!("{{{{ $env.{} }}}}", var_name))
+        Self::new(format!("{{{{ $env.{var_name} }}}}"))
     }
 
     // === Accessors ===
@@ -317,14 +317,14 @@ impl ExpressionValue {
     /// Creates a simple variable reference expression
     #[must_use]
     pub fn var(name: &str) -> Self {
-        Self::new(format!("{{{{ {} }}}}", name))
+        Self::new(format!("{{{{ {name} }}}}"))
     }
 
     /// Creates a function call expression
     #[must_use]
     pub fn function(func_name: &str, args: &[&str]) -> Self {
         let args_str = args.join(", ");
-        Self::new(format!("{{{{ {}({}) }}}}", func_name, args_str))
+        Self::new(format!("{{{{ {func_name}({args_str}) }}}}"))
     }
 
     /// Combines multiple expressions with a separator

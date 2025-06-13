@@ -170,7 +170,7 @@ impl BinaryValue {
     /// Inserts a byte at the specified position
     pub fn insert(&mut self, index: usize, byte: u8) -> ValueResult<()> {
         if index > self.len() {
-            return Err(ValueError::custom(format!("Index {} out of bounds for insertion", index)));
+            return Err(ValueError::custom(format!("Index {index} out of bounds for insertion")));
         }
         self.0.insert(index, byte);
         Ok(())
@@ -179,7 +179,7 @@ impl BinaryValue {
     /// Removes and returns the byte at the specified position
     pub fn remove(&mut self, index: usize) -> ValueResult<u8> {
         if index >= self.len() {
-            return Err(ValueError::custom(format!("Index {} out of bounds for removal", index)));
+            return Err(ValueError::custom(format!("Index {index} out of bounds for removal")));
         }
         Ok(self.0.remove(index))
     }
@@ -208,12 +208,11 @@ impl BinaryValue {
     pub fn slice(&self, start: usize, end: usize) -> ValueResult<Self> {
         if start > end {
             return Err(ValueError::custom(format!(
-                "Invalid slice range: start ({}) > end ({})",
-                start, end
+                "Invalid slice range: start ({start}) > end ({end})"
             )));
         }
         if end > self.len() {
-            return Err(ValueError::custom(format!("End index {} out of bounds", end)));
+            return Err(ValueError::custom(format!("End index {end} out of bounds")));
         }
         Ok(Self::new(self.0[start..end].to_vec()))
     }
@@ -269,7 +268,7 @@ impl BinaryValue {
         general_purpose::STANDARD
             .decode(encoded)
             .map(Self::new)
-            .map_err(|e| ValueError::custom(format!("Base64 decode error: {}", e)))
+            .map_err(|e| ValueError::custom(format!("Base64 decode error: {e}")))
     }
 
     /// Creates from base64 string (URL-safe encoding)
@@ -277,19 +276,19 @@ impl BinaryValue {
         general_purpose::URL_SAFE
             .decode(encoded)
             .map(Self::new)
-            .map_err(|e| ValueError::custom(format!("Base64 URL decode error: {}", e)))
+            .map_err(|e| ValueError::custom(format!("Base64 URL decode error: {e}")))
     }
 
     /// Converts to hexadecimal string (lowercase)
     #[must_use]
     pub fn to_hex(&self) -> String {
-        self.0.iter().map(|byte| format!("{:02x}", byte)).collect::<String>()
+        self.0.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
     }
 
     /// Converts to hexadecimal string (uppercase)
     #[must_use]
     pub fn to_hex_upper(&self) -> String {
-        self.0.iter().map(|byte| format!("{:02X}", byte)).collect::<String>()
+        self.0.iter().map(|byte| format!("{byte:02X}")).collect::<String>()
     }
 
     /// Creates from hexadecimal string
@@ -307,7 +306,7 @@ impl BinaryValue {
             match u8::from_str_radix(byte_str, 16) {
                 Ok(byte) => bytes.push(byte),
                 Err(_) => {
-                    return Err(ValueError::custom(format!("Invalid hex byte: {}", byte_str)));
+                    return Err(ValueError::custom(format!("Invalid hex byte: {byte_str}")));
                 },
             }
         }
@@ -318,7 +317,7 @@ impl BinaryValue {
     /// Attempts to convert to UTF-8 string
     pub fn to_utf8(&self) -> ValueResult<String> {
         String::from_utf8(self.0.clone())
-            .map_err(|e| ValueError::custom(format!("Invalid UTF-8: {}", e)))
+            .map_err(|e| ValueError::custom(format!("Invalid UTF-8: {e}")))
     }
 
     /// Attempts to convert to UTF-8 string (lossy conversion)

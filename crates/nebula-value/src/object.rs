@@ -281,8 +281,7 @@ impl ObjectValue {
                 },
                 Some(_) => {
                     return Err(ValueError::custom(format!(
-                        "Cannot set nested value: '{}' is not an object",
-                        first
+                        "Cannot set nested value: '{first}' is not an object"
                     )));
                 },
                 None => {
@@ -317,8 +316,7 @@ impl ObjectValue {
             match self.get_mut(first) {
                 Some(Value::Object(obj)) => Ok(obj.remove(second)),
                 Some(_) => Err(ValueError::custom(format!(
-                    "Cannot remove nested value: '{}' is not an object",
-                    first
+                    "Cannot remove nested value: '{first}' is not an object"
                 ))),
                 None => Ok(None),
             }
@@ -532,7 +530,7 @@ impl ObjectValue {
     /// Helper function for recursive flattening
     fn flatten_recursive(&self, prefix: &str, result: &mut InternalMap<String, Value>) {
         for (k, v) in &self.0 {
-            let key = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
+            let key = if prefix.is_empty() { k.clone() } else { format!("{prefix}.{k}") };
 
             match v {
                 Value::Object(obj) => {
@@ -567,8 +565,7 @@ impl ObjectValue {
                 },
                 None => {
                     return Err(ValueError::custom(format!(
-                        "Cannot invert object: value for key '{}' is not a string",
-                        k
+                        "Cannot invert object: value for key '{k}' is not a string"
                     )));
                 },
             }

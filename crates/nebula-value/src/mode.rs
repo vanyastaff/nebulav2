@@ -419,11 +419,11 @@ impl ModeTypeValue {
             Self::File(f) => {
                 let size = f
                     .size()
-                    .map(|s| format!("{} bytes", s))
+                    .map(|s| format!("{s} bytes"))
                     .unwrap_or_else(|| "unknown size".to_string());
                 let filename = f.filename().unwrap_or("unnamed");
                 let file_type = f.file_type();
-                format!("file '{}' ({}, {})", filename, file_type, size)
+                format!("file '{filename}' ({file_type}, {size})")
             },
         }
     }
@@ -494,7 +494,7 @@ impl ModeTypeValue {
 impl fmt::Display for ModeTypeValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::String(s) => write!(f, "{}", s),
+            Self::String(s) => write!(f, "{s}"),
             Self::File(file) => {
                 if let Some(filename) = file.filename() {
                     write!(f, "<file '{}' ({})>", filename, file.file_type())

@@ -52,7 +52,7 @@ impl CronValue {
         if minute > 59 {
             return Err(ValueError::custom("Minute must be 0-59"));
         }
-        Self::new(format!("{} {} * * *", minute, hour))
+        Self::new(format!("{minute} {hour} * * *"))
     }
 
     /// Creates a cron expression that runs weekly on Sunday at midnight
@@ -72,7 +72,7 @@ impl CronValue {
         if minute > 59 {
             return Err(ValueError::custom("Minute must be 0-59"));
         }
-        Self::new(format!("{} {} * * {}", minute, hour, day_of_week))
+        Self::new(format!("{minute} {hour} * * {day_of_week}"))
     }
 
     /// Creates a cron expression that runs monthly on the 1st at midnight
@@ -92,7 +92,7 @@ impl CronValue {
         if minute > 59 {
             return Err(ValueError::custom("Minute must be 0-59"));
         }
-        Self::new(format!("{} {} {} * *", minute, hour, day))
+        Self::new(format!("{minute} {hour} {day} * *"))
     }
 
     /// Creates a cron expression that runs at specified intervals
@@ -100,7 +100,7 @@ impl CronValue {
         if n == 0 || n > 59 {
             return Err(ValueError::custom("Interval must be 1-59 minutes"));
         }
-        Self::new(format!("*/{} * * * *", n))
+        Self::new(format!("*/{n} * * * *"))
     }
 
     /// Creates a cron expression that runs every N hours
@@ -108,7 +108,7 @@ impl CronValue {
         if n == 0 || n > 23 {
             return Err(ValueError::custom("Interval must be 1-23 hours"));
         }
-        Self::new(format!("0 */{} * * *", n))
+        Self::new(format!("0 */{n} * * *"))
     }
 
     // === Expression Information ===
@@ -378,7 +378,7 @@ impl CronExpression {
         if field.contains('-') {
             let parts: Vec<&str> = field.split('-').collect();
             if parts.len() != 2 {
-                return Err(ValueError::custom(format!("Invalid range in {}: {}", name, field)));
+                return Err(ValueError::custom(format!("Invalid range in {name}: {field}")));
             }
             let start: u32 = parts[0].parse().map_err(|_| {
                 ValueError::custom(format!("Invalid range start in {}: {}", name, parts[0]))
@@ -389,8 +389,7 @@ impl CronExpression {
 
             if start < min || start > max || end < min || end > max || start > end {
                 return Err(ValueError::custom(format!(
-                    "Invalid range in {}: {}-{}",
-                    name, start, end
+                    "Invalid range in {name}: {start}-{end}"
                 )));
             }
             return Ok(());
@@ -400,7 +399,7 @@ impl CronExpression {
         if field.contains('/') {
             let parts: Vec<&str> = field.split('/').collect();
             if parts.len() != 2 {
-                return Err(ValueError::custom(format!("Invalid step in {}: {}", name, field)));
+                return Err(ValueError::custom(format!("Invalid step in {name}: {field}")));
             }
 
             let step: u32 = parts[1].parse().map_err(|_| {
@@ -408,7 +407,7 @@ impl CronExpression {
             })?;
 
             if step == 0 {
-                return Err(ValueError::custom(format!("Step value cannot be zero in {}", name)));
+                return Err(ValueError::custom(format!("Step value cannot be zero in {name}")));
             }
 
             // Validate the base part (before the /)
@@ -429,12 +428,11 @@ impl CronExpression {
         // Handle single values
         let value: u32 = field
             .parse()
-            .map_err(|_| ValueError::custom(format!("Invalid value in {}: {}", name, field)))?;
+            .map_err(|_| ValueError::custom(format!("Invalid value in {name}: {field}")))?;
 
         if value < min || value > max {
             return Err(ValueError::custom(format!(
-                "Value {} out of range for {}: {}-{}",
-                value, name, min, max
+                "Value {value} out of range for {name}: {min}-{max}"
             )));
         }
 
@@ -452,9 +450,9 @@ impl CronExpression {
             "0" => parts.push("at minute 0".to_string()),
             minute if minute.starts_with("*/") => {
                 let interval = minute.strip_prefix("*/").unwrap();
-                parts.push(format!("every {} minutes", interval));
+                parts.push(format!("every {interval} minutes"));
             },
-            minute => parts.push(format!("at minute {}", minute)),
+            minute => parts.push(format!("at minute {minute}")),
         }
 
         // Hour
@@ -464,16 +462,16 @@ impl CronExpression {
             "12" => parts.push("at noon".to_string()),
             hour if hour.starts_with("*/") => {
                 let interval = hour.strip_prefix("*/").unwrap();
-                parts.push(format!("every {} hours", interval));
+                parts.push(format!("every {interval} hours"));
             },
-            hour => parts.push(format!("at hour {}", hour)),
+            hour => parts.push(format!("at hour {hour}")),
         }
 
         // Day of month
         match self.day.as_str() {
             "*" => {},
             "1" => parts.push("on the 1st".to_string()),
-            day => parts.push(format!("on day {}", day)),
+            day => parts.push(format!("on day {day}")),
         }
 
         // Month
@@ -495,7 +493,7 @@ impl CronExpression {
                     "12" => "December",
                     _ => month,
                 };
-                parts.push(format!("in {}", month_name));
+                parts.push(format!("in {month_name}"));
             },
         }
 
@@ -509,7 +507,7 @@ impl CronExpression {
             "4" => parts.push("on Thursday".to_string()),
             "5" => parts.push("on Friday".to_string()),
             "6" => parts.push("on Saturday".to_string()),
-            day => parts.push(format!("on day {} of week", day)),
+            day => parts.push(format!("on day {day} of week")),
         }
 
         if parts.is_empty() { "every minute".to_string() } else { parts.join(", ") }

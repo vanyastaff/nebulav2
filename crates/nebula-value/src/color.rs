@@ -192,8 +192,7 @@ impl ColorValue {
         }
 
         Err(ValueError::custom(format!(
-            "Unknown color format: '{}'. Supported formats: hex (#RGB, #RRGGBB, #RRGGBBAA) and named colors.",
-            input
+            "Unknown color format: '{input}'. Supported formats: hex (#RGB, #RRGGBB, #RRGGBBAA) and named colors."
         )))
     }
 

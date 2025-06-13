@@ -41,7 +41,7 @@ impl RegexValue {
     pub fn new(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref().to_string();
         let compiled = Regex::new(&pattern_str)
-            .map_err(|e| ValueError::custom(format!("Invalid regex '{}': {}", pattern_str, e)))?;
+            .map_err(|e| ValueError::custom(format!("Invalid regex '{pattern_str}': {e}")))?;
 
         Ok(Self { pattern: pattern_str, compiled })
     }
@@ -49,21 +49,21 @@ impl RegexValue {
     /// Creates a regex with case-insensitive matching
     pub fn new_case_insensitive(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref();
-        let case_insensitive_pattern = format!("(?i){}", pattern_str);
+        let case_insensitive_pattern = format!("(?i){pattern_str}");
         Self::new(case_insensitive_pattern)
     }
 
     /// Creates a regex with multiline mode (^ and $ match line boundaries)
     pub fn new_multiline(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref();
-        let multiline_pattern = format!("(?m){}", pattern_str);
+        let multiline_pattern = format!("(?m){pattern_str}");
         Self::new(multiline_pattern)
     }
 
     /// Creates a regex with dot-all mode (. matches newlines)
     pub fn new_dotall(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref();
-        let dotall_pattern = format!("(?s){}", pattern_str);
+        let dotall_pattern = format!("(?s){pattern_str}");
         Self::new(dotall_pattern)
     }
 
@@ -71,7 +71,7 @@ impl RegexValue {
     /// comments)
     pub fn new_extended(pattern: impl AsRef<str>) -> ValueResult<Self> {
         let pattern_str = pattern.as_ref();
-        let extended_pattern = format!("(?x){}", pattern_str);
+        let extended_pattern = format!("(?x){pattern_str}");
         Self::new(extended_pattern)
     }
 
@@ -102,7 +102,7 @@ impl RegexValue {
         let full_pattern = if flags.is_empty() {
             pattern_str.to_string()
         } else {
-            format!("(?{}){}", flags, pattern_str)
+            format!("(?{flags}){pattern_str}")
         };
 
         Self::new(full_pattern)

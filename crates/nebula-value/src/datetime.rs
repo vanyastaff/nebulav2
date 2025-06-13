@@ -147,8 +147,7 @@ impl DateTimeValue {
         }
 
         Err(ValueError::custom(format!(
-            "Unable to parse datetime from string: '{}'. Supported formats include ISO 8601, RFC 3339, and common date/time patterns.",
-            s
+            "Unable to parse datetime from string: '{s}'. Supported formats include ISO 8601, RFC 3339, and common date/time patterns."
         )))
     }
 

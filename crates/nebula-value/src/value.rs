@@ -326,16 +326,16 @@ impl Value {
     #[must_use]
     pub fn display_string(&self) -> String {
         match self {
-            Self::String(s) => format!("\"{}\"", s),
+            Self::String(s) => s.to_string(),
             Self::Number(n) => n.to_string(),
             Self::Boolean(b) => b.to_string(),
             Self::Array(a) => format!("[array with {} items]", a.len()),
             Self::Object(o) => format!("[object with {} fields]", o.len()),
             Self::DateTime(dt) => dt.to_string(),
             Self::Duration(d) => d.to_string(),
-            Self::Mode(m) => format!("[mode: {}]", m),
-            Self::Expression(e) => format!("{{{{ {} }}}}", e),
-            Self::Regex(r) => format!("/{}/", r.pattern()),
+            Self::Mode(m) => format!("[mode: {m}]"),
+            Self::Expression(e) => format!("[exp: {e}]"),
+            Self::Regex(r) => format!("[regex: {}]", r.pattern()),
             Self::Color(c) => c.to_string(),
             Self::Cron(cr) => cr.to_string(),
             Self::File(f) => f.to_string(),

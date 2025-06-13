@@ -543,9 +543,9 @@ impl FileValue {
 
 impl fmt::Display for FileValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let size_info = self.size().map(|s| format!(" ({}B)", s)).unwrap_or_default();
+        let size_info = self.size().map(|s| format!(" ({s}B)")).unwrap_or_default();
 
-        let filename_info = self.filename().map(|f| format!(" '{}'", f)).unwrap_or_default();
+        let filename_info = self.filename().map(|f| format!(" '{f}'")).unwrap_or_default();
 
         write!(f, "[{} file{}{}]", self.file_type(), filename_info, size_info)
     }

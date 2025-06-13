@@ -240,8 +240,7 @@ impl ArrayValue {
     pub fn slice(&self, start: usize, end: usize) -> ValueResult<ArrayValue> {
         if start > end {
             return Err(ValueError::custom(format!(
-                "Invalid slice range: start ({}) > end ({})",
-                start, end
+                "Invalid slice range: start ({start}) > end ({end})"
             )));
         }
         if end > self.len() {
