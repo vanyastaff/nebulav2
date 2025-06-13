@@ -1,12 +1,85 @@
 //! Value comparison utilities for nebula-value
 
-use crate::{NumberValue, Value, ValueResult};
+use crate::{NumberValue, Value, ValueError, ValueResult};
+
+/// Result of a value comparison operation
+#[derive(Debug, Clone, PartialEq)]
+pub enum ComparisonResult {
+    /// Comparison returned true
+    True,
+    /// Comparison returned false
+    False,
+    /// Comparison failed with an error
+    Error(ValueError),
+}
+
+impl ComparisonResult {
+    /// Returns true if the result is True
+    #[inline]
+    pub fn is_true(&self) -> bool {
+        matches!(self, Self::True)
+    }
+
+    /// Returns true if the result is False
+    #[inline]
+    pub fn is_false(&self) -> bool {
+        matches!(self, Self::False)
+    }
+
+    /// Returns true if the result is an Error
+    #[inline]
+    pub fn is_error(&self) -> bool {
+        matches!(self, Self::Error(_))
+    }
+
+    /// Converts to bool, treating errors as false
+    #[inline]
+    pub fn to_bool(&self) -> bool {
+        matches!(self, Self::True)
+    }
+
+    /// Converts to Result<bool, ValueError>
+    #[inline]
+    pub fn to_result(&self) -> ValueResult<bool> {
+        match self {
+            Self::True => Ok(true),
+            Self::False => Ok(false),
+            Self::Error(e) => Err(e.clone()),
+        }
+    }
+}
+
+impl From<bool> for ComparisonResult {
+    #[inline]
+    fn from(value: bool) -> Self {
+        if value { Self::True } else { Self::False }
+    }
+}
+
+impl From<ValueError> for ComparisonResult {
+    #[inline]
+    fn from(error: ValueError) -> Self {
+        Self::Error(error)
+    }
+}
+
+impl From<ValueResult<bool>> for ComparisonResult {
+    fn from(result: ValueResult<bool>) -> Self {
+        match result {
+            Ok(true) => Self::True,
+            Ok(false) => Self::False,
+            Err(e) => Self::Error(e),
+        }
+    }
+}
 
 /// Comparison utilities for Value types
 #[derive(Debug, Clone)]
 pub struct ValueComparison;
 
 impl ValueComparison {
+    // === Methods returning bool (for backwards compatibility) ===
+
     /// Checks if two values are equal
     pub fn equals(value: &Value, expected: &Value) -> bool {
         value == expected
@@ -73,6 +146,86 @@ impl ValueComparison {
         !Self::is_empty(value)
     }
 
+    // === Methods returning ComparisonResult (new API) ===
+
+    /// Checks if two values are equal, returning ComparisonResult
+    pub fn equals_result(value: &Value, expected: &Value) -> ComparisonResult {
+        ComparisonResult::from(Self::equals(value, expected))
+    }
+
+    /// Checks if two values are not equal, returning ComparisonResult
+    pub fn not_equals_result(value: &Value, expected: &Value) -> ComparisonResult {
+        ComparisonResult::from(Self::not_equals(value, expected))
+    }
+
+    /// Checks if value is greater than expected, returning ComparisonResult
+    pub fn gt_result(value: &Value, expected: &Value) -> ComparisonResult {
+        match Self::compare_values(value, expected) {
+            Some(ord) => ComparisonResult::from(ord.is_gt()),
+            None => ComparisonResult::Error(ValueError::incompatible_comparison(
+                value.type_name(),
+                expected.type_name(),
+            )),
+        }
+    }
+
+    /// Checks if value is less than expected, returning ComparisonResult
+    pub fn lt_result(value: &Value, expected: &Value) -> ComparisonResult {
+        match Self::compare_values(value, expected) {
+            Some(ord) => ComparisonResult::from(ord.is_lt()),
+            None => ComparisonResult::Error(ValueError::incompatible_comparison(
+                value.type_name(),
+                expected.type_name(),
+            )),
+        }
+    }
+
+    /// Checks if value is greater than or equal to expected, returning
+    /// ComparisonResult
+    pub fn gte_result(value: &Value, expected: &Value) -> ComparisonResult {
+        match Self::compare_values(value, expected) {
+            Some(ord) => ComparisonResult::from(ord.is_ge()),
+            None => ComparisonResult::Error(ValueError::incompatible_comparison(
+                value.type_name(),
+                expected.type_name(),
+            )),
+        }
+    }
+
+    /// Checks if value is less than or equal to expected, returning
+    /// ComparisonResult
+    pub fn lte_result(value: &Value, expected: &Value) -> ComparisonResult {
+        match Self::compare_values(value, expected) {
+            Some(ord) => ComparisonResult::from(ord.is_le()),
+            None => ComparisonResult::Error(ValueError::incompatible_comparison(
+                value.type_name(),
+                expected.type_name(),
+            )),
+        }
+    }
+
+    /// Checks if value is contained in the provided list, returning
+    /// ComparisonResult
+    pub fn in_list_result(value: &Value, list: &[Value]) -> ComparisonResult {
+        ComparisonResult::from(Self::in_list(value, list))
+    }
+
+    /// Checks if value is not contained in the provided list, returning
+    /// ComparisonResult
+    pub fn not_in_list_result(value: &Value, list: &[Value]) -> ComparisonResult {
+        ComparisonResult::from(Self::not_in_list(value, list))
+    }
+
+    /// Checks if a value is considered "empty", returning ComparisonResult
+    pub fn is_empty_result(value: &Value) -> ComparisonResult {
+        ComparisonResult::from(Self::is_empty(value))
+    }
+
+    /// Checks if a value is not empty, returning ComparisonResult
+    pub fn is_not_empty_result(value: &Value) -> ComparisonResult {
+        ComparisonResult::from(Self::is_not_empty(value))
+    }
+
     /// Attempts to compare two values, returning an Ordering if possible
     fn compare_values(left: &Value, right: &Value) -> Option<std::cmp::Ordering> {
         match (left, right) {
@@ -116,19 +269,17 @@ impl ValueComparison {
     pub fn matches_pattern(value: &Value, pattern: &Value) -> ValueResult<bool> {
         match (value, pattern) {
             (a, b) if a == b => Ok(true),
-            (Value::String(text), Value::Regex(regex)) => Ok(regex.is_match(text.as_ref())),
-            (Value::String(text), Value::String(pattern_str)) => {
-                let text_str: &str = text.as_ref();
-                let pattern_str: &str = pattern_str.as_ref();
-                Ok(text_str.contains(pattern_str))
-            },
+            (Value::String(text), Value::Regex(regex)) => Ok(regex.is_match(text)),
+            (Value::String(text), Value::String(pattern_str)) => Ok(text.contains(pattern_str)),
             (Value::Array(arr), element) => Ok(arr.iter().any(|item| item == element)),
-            (Value::Object(obj), Value::String(key)) => {
-                let key_str: &str = key.as_ref();
-                Ok(obj.contains_key(key_str))
-            },
+            (Value::Object(obj), Value::String(key)) => Ok(obj.contains_key(key)),
             _ => Ok(false),
         }
+    }
+
+    /// Checks if value matches a pattern, returning ComparisonResult
+    pub fn matches_pattern_result(value: &Value, pattern: &Value) -> ComparisonResult {
+        ComparisonResult::from(Self::matches_pattern(value, pattern))
     }
 
     /// Performs fuzzy string matching with similarity threshold
@@ -137,13 +288,17 @@ impl ValueComparison {
 
         match (value, expected) {
             (Value::String(a), Value::String(b)) => {
-                let a_str: &str = a.as_ref();
-                let b_str: &str = b.as_ref();
-                let similarity = Self::string_similarity(a_str, b_str);
+                let similarity = Self::string_similarity(a, b);
                 Ok(similarity >= threshold)
             },
             _ => Ok(Self::equals(value, expected)),
         }
+    }
+
+    /// Performs fuzzy string matching with similarity threshold, returning
+    /// ComparisonResult
+    pub fn fuzzy_match_result(value: &Value, expected: &Value, threshold: f64) -> ComparisonResult {
+        ComparisonResult::from(Self::fuzzy_match(value, expected, threshold))
     }
 
     /// Calculates simple character-based similarity between two strings
@@ -172,11 +327,7 @@ impl ValueComparison {
     /// Case-insensitive string comparison
     pub fn string_equals_ignore_case(value: &Value, expected: &Value) -> bool {
         match (value, expected) {
-            (Value::String(a), Value::String(b)) => {
-                let a_str: &str = a.as_ref();
-                let b_str: &str = b.as_ref();
-                a_str.to_lowercase() == b_str.to_lowercase()
-            },
+            (Value::String(a), Value::String(b)) => a.to_lowercase() == b.to_lowercase(),
             _ => Self::equals(value, expected),
         }
     }
@@ -200,6 +351,42 @@ mod tests {
     }
 
     #[test]
+    fn test_comparison_result() {
+        let a = Value::string("hello");
+        let b = Value::string("hello");
+        let c = Value::string("world");
+
+        // Test ComparisonResult API
+        let result1 = ValueComparison::equals_result(&a, &b);
+        assert!(result1.is_true());
+        assert!(!result1.is_false());
+        assert!(!result1.is_error());
+        assert_eq!(result1.to_bool(), true);
+        assert_eq!(result1.to_result().unwrap(), true);
+
+        let result2 = ValueComparison::equals_result(&a, &c);
+        assert!(result2.is_false());
+        assert!(!result2.is_true());
+        assert!(!result2.is_error());
+        assert_eq!(result2.to_bool(), false);
+        assert_eq!(result2.to_result().unwrap(), false);
+    }
+
+    #[test]
+    fn test_comparison_errors() {
+        let string_val = Value::string("hello");
+        let number_val = Value::number(42);
+
+        // These should return errors when comparing incompatible types
+        let result = ValueComparison::gt_result(&string_val, &number_val);
+        assert!(result.is_error());
+        assert!(!result.is_true());
+        assert!(!result.is_false());
+        assert_eq!(result.to_bool(), false); // Errors treated as false
+        assert!(result.to_result().is_err());
+    }
+
+    #[test]
     fn test_numeric_comparisons() {
         let five = Value::number(5);
         let ten = Value::number(10);
@@ -212,6 +399,10 @@ mod tests {
         let same = Value::number(5);
         assert!(ValueComparison::gte_simple(&five, &same));
         assert!(ValueComparison::lte_simple(&five, &same));
+
+        // Test with ComparisonResult
+        let result = ValueComparison::gt_result(&ten, &five);
+        assert!(result.is_true());
     }
 
     #[test]
@@ -225,6 +416,10 @@ mod tests {
         let missing = Value::string("grape");
         assert!(!ValueComparison::in_list(&missing, &list));
         assert!(ValueComparison::not_in_list(&missing, &list));
+
+        // Test with ComparisonResult
+        let result = ValueComparison::in_list_result(&value, &list);
+        assert!(result.is_true());
     }
 
     #[test]
@@ -237,8 +432,14 @@ mod tests {
         assert!(ValueComparison::is_empty(&Value::null()));
 
         assert!(ValueComparison::is_not_empty(&Value::string("hello")));
-        assert!(ValueComparison::is_not_empty(&Value::array(vec![Value::string("item")])));
+        assert!(ValueComparison::is_not_empty(&Value::array(ArrayValue::new(vec![
+            Value::string("item")
+        ]))));
         assert!(ValueComparison::is_not_empty(&Value::number(42)));
         assert!(ValueComparison::is_not_empty(&Value::boolean(true)));
+
+        // Test with ComparisonResult
+        let result = ValueComparison::is_empty_result(&Value::string(""));
+        assert!(result.is_true());
     }
 }

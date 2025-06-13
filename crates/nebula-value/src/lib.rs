@@ -76,11 +76,10 @@ pub use array::ArrayValue;
 pub use binary::BinaryValue;
 pub use boolean::BooleanValue;
 pub use color::ColorValue;
-pub use comparison::ValueComparison;
+pub use comparison::{ComparisonResult, ValueComparison};
 pub use cron::CronValue;
 pub use datetime::DateTimeValue;
 pub use duration::DurationValue;
-// Error types
 pub use error::{ValueError, ValueResult};
 pub use expression::ExpressionValue;
 pub use file::FileValue;
@@ -94,9 +93,9 @@ pub use value::Value;
 /// Prelude module for convenient imports
 pub mod prelude {
     pub use crate::{
-        ArrayValue, BinaryValue, BooleanValue, ColorValue, CronValue, DateTimeValue, DurationValue,
-        ExpressionValue, FileValue, ModeValue, NumberValue, ObjectValue, RegexValue, StringValue,
-        Value, ValueError, ValueResult,
+        ArrayValue, BinaryValue, BooleanValue, ColorValue, ComparisonResult, CronValue,
+        DateTimeValue, DurationValue, ExpressionValue, FileValue, ModeValue, NumberValue,
+        ObjectValue, RegexValue, StringValue, Value, ValueComparison, ValueError, ValueResult,
     };
 }
 
