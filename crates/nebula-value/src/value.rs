@@ -3,15 +3,17 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     ArrayValue, BinaryValue, BooleanValue, ColorValue, CronValue, DateTimeValue, DurationValue,
-    ExpressionValue, FileValue, GroupValue, ModeValue, NumberValue, ObjectValue, RegexValue,
-    StringValue,
+    ExpressionValue, FileValue, ModeValue, NumberValue, ObjectValue, RegexValue, StringValue,
 };
+
+#[cfg(feature = "serde")]
+use crate::error::ValueError;
 
 /// The main Value enum representing all possible value types in Nebula
 ///
 /// This enum supports both tagged and untagged serialization depending on context.
 /// The default serialization uses a tagged format for better type safety.
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "lowercase"))]
 pub enum Value {
@@ -31,8 +33,6 @@ pub enum Value {
     DateTime(DateTimeValue),
     /// Time duration/interval
     Duration(DurationValue),
-    /// Group value (for grouping related parameters)
-    Group(GroupValue),
     /// Mode value (for UI modes)
     Mode(ModeValue),
     /// Expression value (for dynamic expressions)
@@ -181,13 +181,6 @@ impl Value {
         matches!(self, Self::Duration(_))
     }
 
-    /// Returns true if this is a group value
-    #[inline]
-    #[must_use]
-    pub const fn is_group(&self) -> bool {
-        matches!(self, Self::Group(_))
-    }
-
     /// Returns true if this is a mode value
     #[inline]
     #[must_use]
@@ -236,88 +229,56 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn as_string(&self) -> Option<&str> {
-        if let Self::String(s) = self {
-            Some(s.as_ref())
-        } else {
-            None
-        }
+        if let Self::String(s) = self { Some(s.as_ref()) } else { None }
     }
 
     /// Returns the number value if this is a number
     #[inline]
     #[must_use]
     pub fn as_number(&self) -> Option<&NumberValue> {
-        if let Self::Number(n) = self {
-            Some(n)
-        } else {
-            None
-        }
+        if let Self::Number(n) = self { Some(n) } else { None }
     }
 
     /// Returns the boolean value if this is a boolean
     #[inline]
     #[must_use]
     pub fn as_boolean(&self) -> Option<bool> {
-        if let Self::Boolean(b) = self {
-            Some(**b)
-        } else {
-            None
-        }
+        if let Self::Boolean(b) = self { Some(**b) } else { None }
     }
 
     /// Returns the array value if this is an array
     #[inline]
     #[must_use]
     pub fn as_array(&self) -> Option<&ArrayValue> {
-        if let Self::Array(a) = self {
-            Some(a)
-        } else {
-            None
-        }
+        if let Self::Array(a) = self { Some(a) } else { None }
     }
 
     /// Returns the object value if this is an object
     #[inline]
     #[must_use]
     pub fn as_object(&self) -> Option<&ObjectValue> {
-        if let Self::Object(o) = self {
-            Some(o)
-        } else {
-            None
-        }
+        if let Self::Object(o) = self { Some(o) } else { None }
     }
 
     /// Returns the binary value if this is binary
     #[inline]
     #[must_use]
     pub fn as_binary(&self) -> Option<&BinaryValue> {
-        if let Self::Binary(b) = self {
-            Some(b)
-        } else {
-            None
-        }
+        if let Self::Binary(b) = self { Some(b) } else { None }
     }
 
     /// Returns the datetime value if this is a datetime
     #[inline]
     #[must_use]
     pub fn as_datetime(&self) -> Option<&DateTimeValue> {
-        if let Self::DateTime(dt) = self {
-            Some(dt)
-        } else {
-            None
-        }
+        if let Self::DateTime(dt) = self { Some(dt) } else { None }
     }
 
     /// Returns the duration value if this is a duration
     #[inline]
     #[must_use]
     pub fn as_duration(&self) -> Option<&DurationValue> {
-        if let Self::Duration(d) = self {
-            Some(d)
-        } else {
-            None
-        }
+        if let Self::Duration(d) = self { Some(d) } else { None }
     }
 
     // === Mutable accessor methods ===
@@ -326,22 +287,14 @@ impl Value {
     #[inline]
     #[must_use]
     pub fn as_array_mut(&mut self) -> Option<&mut ArrayValue> {
-        if let Self::Array(a) = self {
-            Some(a)
-        } else {
-            None
-        }
+        if let Self::Array(a) = self { Some(a) } else { None }
     }
 
     /// Returns a mutable reference to the object value if this is an object
     #[inline]
     #[must_use]
     pub fn as_object_mut(&mut self) -> Option<&mut ObjectValue> {
-        if let Self::Object(o) = self {
-            Some(o)
-        } else {
-            None
-        }
+        if let Self::Object(o) = self { Some(o) } else { None }
     }
 
     // === Utility methods ===
@@ -359,7 +312,6 @@ impl Value {
             Self::Object(_) => "object",
             Self::DateTime(_) => "datetime",
             Self::Duration(_) => "duration",
-            Self::Group(_) => "group",
             Self::Mode(_) => "mode",
             Self::Expression(_) => "expression",
             Self::Regex(_) => "regex",
@@ -381,7 +333,6 @@ impl Value {
             Self::Object(o) => format!("[object with {} fields]", o.len()),
             Self::DateTime(dt) => dt.to_string(),
             Self::Duration(d) => d.to_string(),
-            Self::Group(g) => format!("[group: {}]", g.to_string()),
             Self::Mode(m) => format!("[mode: {}]", m.to_string()),
             Self::Expression(e) => format!("{{{{ {} }}}}", e.to_string()),
             Self::Regex(r) => format!("/{}/", r.pattern()),
@@ -548,22 +499,20 @@ impl TryFrom<serde_json::Value> for Value {
                 } else {
                     Err(ValueError::custom("Invalid number format"))
                 }
-            }
+            },
             serde_json::Value::Bool(b) => Ok(Value::boolean(b)),
             serde_json::Value::Array(arr) => {
-                let values: Result<Vec<Value>, ValueError> = arr
-                    .into_iter()
-                    .map(Value::try_from)
-                    .collect();
+                let values: Result<Vec<Value>, ValueError> =
+                    arr.into_iter().map(Value::try_from).collect();
                 Ok(Value::array(ArrayValue::new(values?)))
-            }
+            },
             serde_json::Value::Object(obj) => {
                 let mut object = ObjectValue::new();
                 for (key, val) in obj {
-                    object.insert(key, Value::try_from(val)?)?;
+                    object.insert(key, Value::try_from(val)?);
                 }
                 Ok(Value::object(object))
-            }
+            },
             serde_json::Value::Null => Ok(Value::Null),
         }
     }

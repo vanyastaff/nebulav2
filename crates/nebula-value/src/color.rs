@@ -7,7 +7,7 @@ use std::fmt;
 use std::str::FromStr;
 
 /// Color value supporting multiple formats and color spaces with rich functionality
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ColorValue {
     /// RGBA values (0-255 each)
     pub r: u8,
@@ -141,7 +141,7 @@ impl ColorValue {
                 let b = u8::from_str_radix(&hex[2..3].repeat(2), 16)
                     .map_err(|_| ValueError::custom("Invalid hex color format"))?;
                 Ok(Self::rgb(r, g, b))
-            }
+            },
             4 => {
                 // #RGBA -> #RRGGBBAA
                 let r = u8::from_str_radix(&hex[0..1].repeat(2), 16)
@@ -153,7 +153,7 @@ impl ColorValue {
                 let a = u8::from_str_radix(&hex[3..4].repeat(2), 16)
                     .map_err(|_| ValueError::custom("Invalid hex color format"))?;
                 Ok(Self::rgba(r, g, b, a))
-            }
+            },
             6 => {
                 // #RRGGBB
                 let r = u8::from_str_radix(&hex[0..2], 16)
@@ -163,7 +163,7 @@ impl ColorValue {
                 let b = u8::from_str_radix(&hex[4..6], 16)
                     .map_err(|_| ValueError::custom("Invalid hex color format"))?;
                 Ok(Self::rgb(r, g, b))
-            }
+            },
             8 => {
                 // #RRGGBBAA
                 let r = u8::from_str_radix(&hex[0..2], 16)
@@ -175,7 +175,7 @@ impl ColorValue {
                 let a = u8::from_str_radix(&hex[6..8], 16)
                     .map_err(|_| ValueError::custom("Invalid hex color format"))?;
                 Ok(Self::rgba(r, g, b, a))
-            }
+            },
             _ => Err(ValueError::custom("Hex color must be 3, 4, 6, or eight characters long")),
         }
     }
@@ -194,7 +194,10 @@ impl ColorValue {
             return Ok(color);
         }
 
-        Err(ValueError::custom(format!("Unknown color format: '{}'. Supported formats: hex (#RGB, #RRGGBB, #RRGGBBAA) and named colors.", input)))
+        Err(ValueError::custom(format!(
+            "Unknown color format: '{}'. Supported formats: hex (#RGB, #RRGGBB, #RRGGBBAA) and named colors.",
+            input
+        )))
     }
 
     // === Named Colors ===
@@ -336,22 +339,13 @@ impl ColorValue {
     /// Convert to normalized float values (0.0-1.0)
     #[must_use]
     pub fn to_floats(&self) -> (f32, f32, f32, f32) {
-        (
-            self.r as f32 / 255.0,
-            self.g as f32 / 255.0,
-            self.b as f32 / 255.0,
-            self.a as f32 / 255.0,
-        )
+        (self.r as f32 / 255.0, self.g as f32 / 255.0, self.b as f32 / 255.0, self.a as f32 / 255.0)
     }
 
     /// Convert to RGB float values (0.0-1.0), ignoring alpha
     #[must_use]
     pub fn to_rgb_floats(&self) -> (f32, f32, f32) {
-        (
-            self.r as f32 / 255.0,
-            self.g as f32 / 255.0,
-            self.b as f32 / 255.0,
-        )
+        (self.r as f32 / 255.0, self.g as f32 / 255.0, self.b as f32 / 255.0)
     }
 
     /// Convert to HSL values (H: 0-360, S: 0-100, L: 0-100)
@@ -452,7 +446,8 @@ impl ColorValue {
     /// Convert to grayscale
     #[must_use]
     pub fn grayscale(&self) -> Self {
-        let gray = (0.299 * self.r as f32 + 0.587 * self.g as f32 + 0.114 * self.b as f32).round() as u8;
+        let gray =
+            (0.299 * self.r as f32 + 0.587 * self.g as f32 + 0.114 * self.b as f32).round() as u8;
         Self::rgba(gray, gray, gray, self.a)
     }
 
@@ -546,11 +541,7 @@ impl ColorValue {
 
     /// Convert float RGB components to u8 values
     fn rgb_floats_to_u8(r: f32, g: f32, b: f32) -> (u8, u8, u8) {
-        (
-            (r * 255.0).round() as u8,
-            (g * 255.0).round() as u8,
-            (b * 255.0).round() as u8,
-        )
+        ((r * 255.0).round() as u8, (g * 255.0).round() as u8, (b * 255.0).round() as u8)
     }
 
     fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
@@ -578,11 +569,7 @@ impl ColorValue {
             return (0.0, 0.0, l * 100.0);
         }
 
-        let s = if l < 0.5 {
-            delta / (max + min)
-        } else {
-            delta / (2.0 - max - min)
-        };
+        let s = if l < 0.5 { delta / (max + min) } else { delta / (2.0 - max - min) };
 
         let h = Self::calculate_hue(r, g, b, max, delta);
 
@@ -700,36 +687,42 @@ impl TryFrom<serde_json::Value> for ColorValue {
 
     fn try_from(value: serde_json::Value) -> ValueResult<Self> {
         match value {
-            serde_json::Value::String(color_str) => {
-                Self::parse(color_str)
-            }
+            serde_json::Value::String(color_str) => Self::parse(color_str),
             serde_json::Value::Array(arr) if arr.len() == 3 || arr.len() == 4 => {
-                let r = arr[0].as_u64()
+                let r = arr[0]
+                    .as_u64()
                     .and_then(|v| if v <= 255 { Some(v as u8) } else { None })
                     .ok_or_else(|| ValueError::custom("Invalid red value in a color array"))?;
-                let g = arr[1].as_u64()
+                let g = arr[1]
+                    .as_u64()
                     .and_then(|v| if v <= 255 { Some(v as u8) } else { None })
-                    .ok_or_else(|| ValueError::custom("Invalid green value in a color array"))?;
-                let b = arr[2].as_u64()
+                    .ok_or_else(|| {
+                    ValueError::custom("Invalid green value in a color array")
+                })?;
+                let b = arr[2]
+                    .as_u64()
                     .and_then(|v| if v <= 255 { Some(v as u8) } else { None })
                     .ok_or_else(|| ValueError::custom("Invalid blue value in a color array"))?;
 
                 let a = if arr.len() == 4 {
-                    arr[3].as_u64()
+                    arr[3]
+                        .as_u64()
                         .and_then(|v| if v <= 255 { Some(v as u8) } else { None })
-                        .or_else(|| arr[3].as_f64().map(|f| (f.clamp(0.0, 1.0) * 255.0).round() as u8))
+                        .or_else(|| {
+                            arr[3].as_f64().map(|f| (f.clamp(0.0, 1.0) * 255.0).round() as u8)
+                        })
                         .ok_or_else(|| ValueError::custom("Invalid alpha value in color array"))?
                 } else {
                     255
                 };
 
                 Ok(ColorValue::rgba(r, g, b, a))
-            }
+            },
             other => Err(ValueError::type_conversion_with_value(
                 format!("{:?}", other),
                 "ColorValue",
-                "expected string, or RGB/RGBA array".to_string()
-            ))
+                "expected string, or RGB/RGBA array".to_string(),
+            )),
         }
     }
 }
@@ -777,9 +770,11 @@ mod tests {
         assert!(darker_red.is_dark());
 
         let lighter_red = red.lighten(0.3);
+
         assert!(lighter_red.is_light());
 
         let gray = red.grayscale();
+
         assert!(gray.is_grayscale());
 
         let inverted = ColorValue::black().invert();

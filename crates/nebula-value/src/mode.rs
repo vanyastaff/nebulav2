@@ -1,11 +1,11 @@
+use crate::{BinaryValue, FileValue, StringValue, ValueError, ValueResult};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use crate::{BinaryValue, FileValue, StringValue, ValueError, ValueResult};
 use std::fmt;
 use std::str::FromStr;
 
 /// Value structure automatically determines ultra-simplified mode value - type
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ModeValue {
     /// Parameter key/name
@@ -15,7 +15,7 @@ pub struct ModeValue {
 }
 
 /// Value types - auto-discriminated during serialization/deserialization
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))] // This makes serde auto-detect the variant!
 pub enum ModeTypeValue {
@@ -31,10 +31,7 @@ impl ModeValue {
     /// Creates a new mode value with key and value
     #[must_use]
     pub fn new(key: impl Into<String>, value: ModeTypeValue) -> Self {
-        Self {
-            key: key.into(),
-            value,
-        }
+        Self { key: key.into(), value }
     }
 
     /// Creates a text mode with string value
@@ -85,10 +82,7 @@ impl ModeValue {
         storage_type: crate::file::StorageType,
         metadata: crate::file::FileMetadata,
     ) -> Self {
-        Self::file(
-            key,
-            FileValue::from_remote(storage_key, storage_type, metadata),
-        )
+        Self::file(key, FileValue::from_remote(storage_key, storage_type, metadata))
     }
 
     /// Creates a file mode from a generated file
@@ -100,10 +94,7 @@ impl ModeValue {
         parameters: serde_json::Value,
         metadata: crate::file::FileMetadata,
     ) -> Self {
-        Self::file(
-            key,
-            FileValue::from_generator(generator_id, parameters, metadata),
-        )
+        Self::file(key, FileValue::from_generator(generator_id, parameters, metadata))
     }
 
     /// Creates a file mode from a generated file (without JSON support)
@@ -115,10 +106,7 @@ impl ModeValue {
         parameters: String,
         metadata: crate::file::FileMetadata,
     ) -> Self {
-        Self::file(
-            key,
-            FileValue::from_generator(generator_id, parameters, metadata),
-        )
+        Self::file(key, FileValue::from_generator(generator_id, parameters, metadata))
     }
 
     // === Accessors ===
@@ -256,19 +244,13 @@ impl ModeValue {
     /// Clone with a new key
     #[must_use]
     pub fn with_key(&self, new_key: impl Into<String>) -> Self {
-        Self {
-            key: new_key.into(),
-            value: self.value.clone(),
-        }
+        Self { key: new_key.into(), value: self.value.clone() }
     }
 
     /// Clone with new value
     #[must_use]
     pub fn with_value(&self, new_value: ModeTypeValue) -> Self {
-        Self {
-            key: self.key.clone(),
-            value: new_value,
-        }
+        Self { key: self.key.clone(), value: new_value }
     }
 
     /// Extract the inner value, consuming self
@@ -438,7 +420,7 @@ impl ModeTypeValue {
                 let filename = f.filename().unwrap_or("unnamed");
                 let file_type = f.file_type();
                 format!("file '{}' ({}, {})", filename, file_type, size)
-            }
+            },
         }
     }
 
@@ -492,7 +474,7 @@ impl ModeTypeValue {
                 } else {
                     Ok(format!("File: {}", f.filename().unwrap_or("unnamed")))
                 }
-            }
+            },
         }
     }
 
@@ -515,7 +497,7 @@ impl fmt::Display for ModeTypeValue {
                 } else {
                     write!(f, "<file ({})>", file.file_type())
                 }
-            }
+            },
         }
     }
 }
@@ -646,29 +628,21 @@ impl TryFrom<serde_json::Value> for ModeValue {
                     .ok_or_else(|| ValueError::custom("Missing key"))?
                     .to_string();
 
-                let value = obj
-                    .get("value")
-                    .ok_or_else(|| ValueError::custom("Missing value"))?;
+                let value = obj.get("value").ok_or_else(|| ValueError::custom("Missing value"))?;
 
                 // Use #[serde(untagged)] to auto-detect String vs File
                 let mode_value = ModeTypeValue::try_from(value.clone())?;
 
                 Ok(ModeValue { key, value: mode_value })
-            }
+            },
             serde_json::Value::String(s) => {
                 // Simple string conversion to text mode
                 Ok(ModeValue::text("parsed", s))
-            }
+            },
             // Legacy support for old format with "mode" field
             other if other.get("mode").is_some() => {
-                let mode = other
-                    .get("mode")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("text");
-                let key = other
-                    .get("key")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("legacy");
+                let mode = other.get("mode").and_then(|v| v.as_str()).unwrap_or("text");
+                let key = other.get("key").and_then(|v| v.as_str()).unwrap_or("legacy");
                 let value = other.get("value").unwrap_or(&serde_json::Value::Null);
 
                 let mode_type_value = match mode {
@@ -678,16 +652,13 @@ impl TryFrom<serde_json::Value> for ModeValue {
                         } else {
                             return Err(ValueError::custom("Invalid text/list value"));
                         }
-                    }
+                    },
                     "file" => ModeTypeValue::try_from(value.clone())?,
                     _ => return Err(ValueError::custom("Unknown mode type")),
                 };
 
-                Ok(ModeValue {
-                    key: key.to_string(),
-                    value: mode_type_value,
-                })
-            }
+                Ok(ModeValue { key: key.to_string(), value: mode_type_value })
+            },
             other => Err(ValueError::custom(format!(
                 "Expected object with key and value, got {:?}",
                 other
@@ -710,12 +681,9 @@ impl TryFrom<serde_json::Value> for ModeTypeValue {
             serde_json::Value::Object(_) => {
                 let file_value = FileValue::try_from(value)?;
                 Ok(ModeTypeValue::file(file_value))
-            }
+            },
 
-            other => Err(ValueError::custom(format!(
-                "Expected string or object, got {:?}",
-                other
-            ))),
+            other => Err(ValueError::custom(format!("Expected string or object, got {:?}", other))),
         }
     }
 }
@@ -763,10 +731,7 @@ mod tests {
     fn test_conversions() {
         let mode = ModeValue::text("greeting", "Hello, World!");
 
-        assert_eq!(
-            mode.to_string_representation().unwrap(),
-            "Hello, World!"
-        );
+        assert_eq!(mode.to_string_representation().unwrap(), "Hello, World!");
 
         let binary = mode.to_binary_data().unwrap();
         assert_eq!(binary.as_bytes(), b"Hello, World!");

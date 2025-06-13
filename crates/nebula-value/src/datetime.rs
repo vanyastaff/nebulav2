@@ -2,13 +2,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use chrono::{DateTime, NaiveDate, NaiveTime, Utc, Datelike, Timelike, Duration as ChronoDuration};
+use chrono::{DateTime, Datelike, Duration as ChronoDuration, NaiveDate, NaiveTime, Timelike, Utc};
 use std::fmt;
 
 /// Date and time value supporting different precision levels with rich functionality
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(untagged))]// JSON: "2024-01-01T12:00:00Z" or "2024-01-01" or "12:00:00"
+#[cfg_attr(feature = "serde", serde(untagged))] // JSON: "2024-01-01T12:00:00Z" or "2024-01-01" or "12:00:00"
 pub enum DateTimeValue {
     /// Full date and time with timezone (UTC)
     DateTime(DateTime<Utc>),
@@ -136,13 +136,7 @@ impl DateTimeValue {
         }
 
         // Try date-only formats
-        let date_formats = [
-            "%d/%m/%Y",
-            "%m/%d/%Y",
-            "%Y/%m/%d",
-            "%d-%m-%Y",
-            "%m-%d-%Y",
-        ];
+        let date_formats = ["%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d", "%d-%m-%Y", "%m-%d-%Y"];
 
         for format in &date_formats {
             if let Ok(date) = NaiveDate::parse_from_str(s, format) {
@@ -310,7 +304,7 @@ impl DateTimeValue {
             Self::Time(time) => {
                 let date = default_date?;
                 Some(date.and_time(*time).and_utc())
-            }
+            },
         }
     }
 
@@ -323,7 +317,7 @@ impl DateTimeValue {
             Self::Time(time) => {
                 let today = Utc::now().date_naive();
                 Some(today.and_time(*time).and_utc())
-            }
+            },
         }
     }
 
@@ -385,11 +379,10 @@ impl DateTimeValue {
     /// Add duration to datetime (only works for datetime values)
     pub fn add_duration(&self, duration: ChronoDuration) -> ValueResult<Self> {
         match self {
-            Self::DateTime(dt) => {
-                dt.checked_add_signed(duration)
-                    .map(Self::DateTime)
-                    .ok_or_else(|| ValueError::custom("Duration addition would overflow"))
-            }
+            Self::DateTime(dt) => dt
+                .checked_add_signed(duration)
+                .map(Self::DateTime)
+                .ok_or_else(|| ValueError::custom("Duration addition would overflow")),
             _ => Err(ValueError::custom("Can only add duration to datetime values")),
         }
     }
@@ -397,11 +390,10 @@ impl DateTimeValue {
     /// Subtract duration from datetime (only works for datetime values)
     pub fn sub_duration(&self, duration: ChronoDuration) -> ValueResult<Self> {
         match self {
-            Self::DateTime(dt) => {
-                dt.checked_sub_signed(duration)
-                    .map(Self::DateTime)
-                    .ok_or_else(|| ValueError::custom("Duration subtraction would underflow"))
-            }
+            Self::DateTime(dt) => dt
+                .checked_sub_signed(duration)
+                .map(Self::DateTime)
+                .ok_or_else(|| ValueError::custom("Duration subtraction would underflow")),
             _ => Err(ValueError::custom("Can only subtract duration from datetime values")),
         }
     }
@@ -409,9 +401,7 @@ impl DateTimeValue {
     /// Calculate duration between two datetime values
     pub fn duration_since(&self, other: &Self) -> ValueResult<ChronoDuration> {
         match (self, other) {
-            (Self::DateTime(dt1), Self::DateTime(dt2)) => {
-                Ok(*dt1 - *dt2)
-            }
+            (Self::DateTime(dt1), Self::DateTime(dt2)) => Ok(*dt1 - *dt2),
             _ => Err(ValueError::custom("Can only calculate duration between datetime values")),
         }
     }
@@ -473,7 +463,7 @@ impl DateTimeValue {
                 let now = Utc::now();
                 let one_year_from_now = now + ChronoDuration::days(365);
                 *dt >= now && *dt <= one_year_from_now
-            }
+            },
             _ => true, // Date/Time only values are generally reasonable
         }
     }
@@ -538,30 +528,29 @@ impl TryFrom<serde_json::Value> for DateTimeValue {
 
     fn try_from(value: serde_json::Value) -> ValueResult<Self> {
         match value {
-            serde_json::Value::String(s) => {
-                DateTimeValue::parse_iso8601(&s)
-            }
+            serde_json::Value::String(s) => DateTimeValue::parse_iso8601(&s),
             serde_json::Value::Number(n) => {
                 if let Some(timestamp) = n.as_i64() {
-                    DateTimeValue::from_timestamp(timestamp)
-                        .ok_or_else(|| ValueError::type_conversion_with_value(
+                    DateTimeValue::from_timestamp(timestamp).ok_or_else(|| {
+                        ValueError::type_conversion_with_value(
                             n.to_string(),
                             "DateTimeValue",
-                            "invalid timestamp".to_string()
-                        ))
+                            "invalid timestamp".to_string(),
+                        )
+                    })
                 } else {
                     Err(ValueError::type_conversion_with_value(
                         n.to_string(),
                         "DateTimeValue",
-                        "timestamp must be a valid integer".to_string()
+                        "timestamp must be a valid integer".to_string(),
                     ))
                 }
-            }
+            },
             other => Err(ValueError::type_conversion_with_value(
                 format!("{:?}", other),
                 "DateTimeValue",
-                "expected string or number".to_string()
-            ))
+                "expected string or number".to_string(),
+            )),
         }
     }
 }
@@ -627,8 +616,8 @@ mod tests {
         let json: serde_json::Value = dt.into();
         assert_eq!(json, serde_json::Value::String("2024-01-15".to_string()));
 
-        let parsed: DateTimeValue = serde_json::Value::String("2024-01-15".to_string())
-            .try_into().unwrap();
+        let parsed: DateTimeValue =
+            serde_json::Value::String("2024-01-15".to_string()).try_into().unwrap();
         assert_eq!(parsed, dt);
     }
 }

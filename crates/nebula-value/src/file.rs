@@ -1,16 +1,17 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::{ValueError, ValueResult, BinaryValue};
+use crate::{BinaryValue, ValueError, ValueResult};
 
-use std::collections::HashMap;
+use chrono::{DateTime, Utc};
+use std::collections::BTreeMap;
 use std::fmt;
+use std::hash::Hash;
 use std::path::PathBuf;
 use std::time::Duration;
-use chrono::{DateTime, Utc};
 
 /// File value with flattened structure - no nested location object
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(tag = "type", rename_all = "snake_case"))]
 pub enum FileValue {
@@ -36,7 +37,7 @@ pub enum FileValue {
     Url {
         url: String,
         #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
-        headers: Option<HashMap<String, String>>,
+        headers: Option<BTreeMap<String, String>>,
         #[cfg_attr(feature = "serde", serde(default = "default_true"))]
         follow_redirects: bool,
         #[cfg_attr(feature = "serde", serde(flatten))]
@@ -83,7 +84,7 @@ pub enum FileValue {
 }
 
 /// Storage backend types
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 pub enum StorageType {
@@ -95,7 +96,7 @@ pub enum StorageType {
 }
 
 /// File metadata (now flattened into each variant)
-#[derive(Debug, Clone, PartialEq, Default)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct FileMetadata {
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
@@ -127,13 +128,28 @@ pub struct FileMetadata {
 
     #[cfg(feature = "json")]
     #[cfg_attr(feature = "serde", serde(default))]
-    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "HashMap::is_empty"))]
-    pub custom: HashMap<String, serde_json::Value>,
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "BTreeMap::is_empty"))]
+    pub custom: BTreeMap<String, serde_json::Value>,
 
     #[cfg(not(feature = "json"))]
     #[cfg_attr(feature = "serde", serde(default))]
     #[cfg_attr(feature = "serde", serde(skip_serializing_if = "HashMap::is_empty"))]
-    pub custom: HashMap<String, String>, // Fallback to string values
+    pub custom: BTreeMap<String, String>, // Fallback to string values
+}
+
+impl Hash for FileMetadata {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.filename.hash(state);
+        self.mime_type.hash(state);
+        self.size.hash(state);
+        self.created_at.hash(state);
+        self.modified_at.hash(state);
+        self.checksum.hash(state);
+        self.encoding.hash(state);
+        self.format_version.hash(state);
+        self.is_sensitive.hash(state);
+        // Custom metadata is not hashed for simplicity
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -156,10 +172,12 @@ mod optional_duration_seconds {
 }
 
 // Helper functions
+#[cfg(feature = "serde")]
 fn default_true() -> bool {
     true
 }
 
+#[cfg(feature = "serde")]
 fn default_chunk_size() -> usize {
     1_048_576 // 1MB
 }
@@ -202,22 +220,12 @@ impl FileValue {
         storage_type: StorageType,
         metadata: FileMetadata,
     ) -> Self {
-        Self::Remote {
-            storage_key,
-            storage_type,
-            credentials_ref: None,
-            metadata,
-        }
+        Self::Remote { storage_key, storage_type, credentials_ref: None, metadata }
     }
 
     /// Creates a URL file
     pub fn from_url(url: String, metadata: FileMetadata) -> Self {
-        Self::Url {
-            url,
-            headers: None,
-            follow_redirects: true,
-            metadata,
-        }
+        Self::Url { url, headers: None, follow_redirects: true, metadata }
     }
 
     /// Creates a generated file
@@ -255,10 +263,7 @@ impl FileValue {
     /// Creates a temporary file
     pub fn from_temp_path(path: PathBuf, cleanup_on_drop: bool) -> Self {
         let size = std::fs::metadata(&path).ok().map(|m| m.len() as usize);
-        let filename = path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .map(String::from);
+        let filename = path.file_name().and_then(|n| n.to_str()).map(String::from);
 
         Self::Temporary {
             path: path.to_string_lossy().into_owned(),
@@ -347,9 +352,7 @@ impl FileValue {
     pub fn read_bytes(&self) -> ValueResult<Vec<u8>> {
         match self {
             FileValue::InMemory { data, .. } => Ok(data.clone().into_bytes()),
-            _ => Err(ValueError::custom(
-                "Can only read bytes from InMemory files synchronously",
-            )),
+            _ => Err(ValueError::custom("Can only read bytes from InMemory files synchronously")),
         }
     }
 
@@ -357,9 +360,7 @@ impl FileValue {
     pub fn read_string(&self) -> ValueResult<String> {
         match self {
             FileValue::InMemory { data, .. } => data.to_utf8(),
-            _ => Err(ValueError::custom(
-                "Can only read string from InMemory files synchronously",
-            )),
+            _ => Err(ValueError::custom("Can only read string from InMemory files synchronously")),
         }
     }
 
@@ -380,10 +381,7 @@ impl FileValue {
 
     /// Checks if the file is stored locally
     pub fn is_local(&self) -> bool {
-        matches!(
-            self,
-            FileValue::InMemory { .. } | FileValue::Temporary { .. }
-        )
+        matches!(self, FileValue::InMemory { .. } | FileValue::Temporary { .. })
     }
 
     /// Checks if this is likely an image file
@@ -489,31 +487,22 @@ impl FileValue {
     /// Updates the generator cache key (only for Generated files)
     pub fn set_cache_key(&mut self, cache_key: Option<String>) -> ValueResult<()> {
         match self {
-            FileValue::Generated {
-                cache_key: current_key,
-                ..
-            } => {
+            FileValue::Generated { cache_key: current_key, .. } => {
                 *current_key = cache_key;
                 Ok(())
-            }
-            _ => Err(ValueError::custom(
-                "Cache key can only be set on Generated files",
-            )),
+            },
+            _ => Err(ValueError::custom("Cache key can only be set on Generated files")),
         }
     }
 
     /// Sets generation timeout (only for Generated files)
     pub fn set_timeout(&mut self, timeout: Option<Duration>) -> ValueResult<()> {
         match self {
-            FileValue::Generated {
-                timeout_seconds, ..
-            } => {
+            FileValue::Generated { timeout_seconds, .. } => {
                 *timeout_seconds = timeout.map(|d| d.as_secs());
                 Ok(())
-            }
-            _ => Err(ValueError::custom(
-                "Timeout can only be set on Generated files",
-            )),
+            },
+            _ => Err(ValueError::custom("Timeout can only be set on Generated files")),
         }
     }
 
@@ -558,23 +547,11 @@ impl FileValue {
 
 impl fmt::Display for FileValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let size_info = self
-            .size()
-            .map(|s| format!(" ({}B)", s))
-            .unwrap_or_default();
+        let size_info = self.size().map(|s| format!(" ({}B)", s)).unwrap_or_default();
 
-        let filename_info = self
-            .filename()
-            .map(|f| format!(" '{}'", f))
-            .unwrap_or_default();
+        let filename_info = self.filename().map(|f| format!(" '{}'", f)).unwrap_or_default();
 
-        write!(
-            f,
-            "[{} file{}{}]",
-            self.file_type(),
-            filename_info,
-            size_info
-        )
+        write!(f, "[{} file{}{}]", self.file_type(), filename_info, size_info)
     }
 }
 
@@ -673,7 +650,8 @@ mod tests {
     #[test]
     fn test_text_detection() {
         let text_data = "This is a text file with normal content.";
-        let file = FileValue::from_bytes(text_data.as_bytes().to_vec(), Some("text.txt".to_string()));
+        let file =
+            FileValue::from_bytes(text_data.as_bytes().to_vec(), Some("text.txt".to_string()));
 
         assert!(file.is_text_file());
         assert!(!file.is_image_file());
@@ -686,10 +664,7 @@ mod tests {
     #[cfg(all(feature = "serde", feature = "json"))]
     #[test]
     fn test_serialization() {
-        let file = FileValue::from_bytes(
-            b"Hello World".to_vec(),
-            Some("hello.txt".to_string())
-        );
+        let file = FileValue::from_bytes(b"Hello World".to_vec(), Some("hello.txt".to_string()));
 
         let json = serde_json::to_value(&file).unwrap();
         assert_eq!(json["type"], "in_memory");
@@ -728,8 +703,14 @@ mod tests {
 
         #[cfg(feature = "json")]
         {
-            file.set_custom_metadata("version".to_string(), serde_json::Value::String("1.0".to_string()));
-            assert_eq!(file.metadata().custom.get("version"), Some(&serde_json::Value::String("1.0".to_string())));
+            file.set_custom_metadata(
+                "version".to_string(),
+                serde_json::Value::String("1.0".to_string()),
+            );
+            assert_eq!(
+                file.metadata().custom.get("version"),
+                Some(&serde_json::Value::String("1.0".to_string()))
+            );
         }
 
         #[cfg(not(feature = "json"))]

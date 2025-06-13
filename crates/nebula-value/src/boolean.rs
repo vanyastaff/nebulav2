@@ -1,9 +1,9 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::{ValueError, ValueResult};
 use std::ops::{BitAnd, BitOr, BitXor, Not};
 use std::str::FromStr;
-use crate::{ValueError, ValueResult};
 
 /// Boolean value type with extended functionality and optimization
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
@@ -138,22 +138,14 @@ impl BooleanValue {
     #[inline]
     #[must_use]
     pub const fn and_then(&self, other: Self) -> Option<Self> {
-        if self.0 && other.0 {
-            Some(Self(true))
-        } else {
-            None
-        }
+        if self.0 && other.0 { Some(Self(true)) } else { None }
     }
 
     /// Returns Some(true) if either value is true, None if both false
     #[inline]
     #[must_use]
     pub const fn or_else(&self, other: Self) -> Option<Self> {
-        if self.0 || other.0 {
-            Some(Self(true))
-        } else {
-            None
-        }
+        if self.0 || other.0 { Some(Self(true)) } else { None }
     }
 
     /// Returns the first value if true, otherwise the second value
@@ -590,15 +582,12 @@ impl TryFrom<serde_json::Value> for BooleanValue {
                 } else {
                     Err(ValueError::custom("Invalid number for boolean conversion"))
                 }
-            }
+            },
             serde_json::Value::String(s) => Self::parse(&s),
-            other => Err(ValueError::custom(format!(
-                "Cannot convert {:?} to BooleanValue", other
-            ))),
+            other => Err(ValueError::custom(format!("Cannot convert {:?} to BooleanValue", other))),
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -694,11 +683,7 @@ mod tests {
 
     #[test]
     fn test_collection_operations() {
-        let values = vec![
-            BooleanValue::TRUE,
-            BooleanValue::FALSE,
-            BooleanValue::TRUE,
-        ];
+        let values = vec![BooleanValue::TRUE, BooleanValue::FALSE, BooleanValue::TRUE];
 
         assert_eq!(BooleanValue::any(&values), BooleanValue::TRUE);
         assert_eq!(BooleanValue::all(&values), BooleanValue::FALSE);
@@ -743,7 +728,8 @@ mod tests {
         assert_eq!(back_f, f);
 
         // From JSON string
-        let from_str = BooleanValue::try_from(serde_json::Value::String("yes".to_string())).unwrap();
+        let from_str =
+            BooleanValue::try_from(serde_json::Value::String("yes".to_string())).unwrap();
         assert_eq!(from_str, BooleanValue::TRUE);
 
         // From JSON number

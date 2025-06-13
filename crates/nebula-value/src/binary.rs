@@ -1,10 +1,10 @@
-use base64::{engine::general_purpose, Engine as _};
+use crate::{ValueError, ValueResult};
+use base64::{Engine as _, engine::general_purpose};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::str::FromStr;
-use crate::{ValueError, ValueResult};
 
 /// Binary data value type with comprehensive operations and encodings
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -167,10 +167,7 @@ impl BinaryValue {
     /// Inserts a byte at the specified position
     pub fn insert(&mut self, index: usize, byte: u8) -> ValueResult<()> {
         if index > self.len() {
-            return Err(ValueError::custom(format!(
-                "Index {} out of bounds for insertion",
-                index
-            )));
+            return Err(ValueError::custom(format!("Index {} out of bounds for insertion", index)));
         }
         self.0.insert(index, byte);
         Ok(())
@@ -179,10 +176,7 @@ impl BinaryValue {
     /// Removes and returns the byte at the specified position
     pub fn remove(&mut self, index: usize) -> ValueResult<u8> {
         if index >= self.len() {
-            return Err(ValueError::custom(format!(
-                "Index {} out of bounds for removal",
-                index
-            )));
+            return Err(ValueError::custom(format!("Index {} out of bounds for removal", index)));
         }
         Ok(self.0.remove(index))
     }
@@ -216,10 +210,7 @@ impl BinaryValue {
             )));
         }
         if end > self.len() {
-            return Err(ValueError::custom(format!(
-                "End index {} out of bounds",
-                end
-            )));
+            return Err(ValueError::custom(format!("End index {} out of bounds", end)));
         }
         Ok(Self::new(self.0[start..end].to_vec()))
     }
@@ -244,11 +235,8 @@ impl BinaryValue {
             return Err(ValueError::custom("Chunk size cannot be zero"));
         }
 
-        let chunks: Vec<Self> = self
-            .0
-            .chunks(chunk_size)
-            .map(|chunk| Self::new(chunk.to_vec()))
-            .collect();
+        let chunks: Vec<Self> =
+            self.0.chunks(chunk_size).map(|chunk| Self::new(chunk.to_vec())).collect();
 
         Ok(chunks)
     }
@@ -292,28 +280,18 @@ impl BinaryValue {
     /// Converts to hexadecimal string (lowercase)
     #[must_use]
     pub fn to_hex(&self) -> String {
-        self.0
-            .iter()
-            .map(|byte| format!("{:02x}", byte))
-            .collect::<String>()
+        self.0.iter().map(|byte| format!("{:02x}", byte)).collect::<String>()
     }
 
     /// Converts to hexadecimal string (uppercase)
     #[must_use]
     pub fn to_hex_upper(&self) -> String {
-        self.0
-            .iter()
-            .map(|byte| format!("{:02X}", byte))
-            .collect::<String>()
+        self.0.iter().map(|byte| format!("{:02X}", byte)).collect::<String>()
     }
 
     /// Creates from hexadecimal string
     pub fn from_hex(hex: &str) -> ValueResult<Self> {
-        let hex = hex
-            .trim()
-            .replace(" ", "")
-            .replace(":", "")
-            .replace("-", "");
+        let hex = hex.trim().replace(" ", "").replace(":", "").replace("-", "");
 
         if hex.len() % 2 != 0 {
             return Err(ValueError::custom("Hex string must have even length"));
@@ -326,11 +304,8 @@ impl BinaryValue {
             match u8::from_str_radix(byte_str, 16) {
                 Ok(byte) => bytes.push(byte),
                 Err(_) => {
-                    return Err(ValueError::custom(format!(
-                        "Invalid hex byte: {}",
-                        byte_str
-                    )))
-                }
+                    return Err(ValueError::custom(format!("Invalid hex byte: {}", byte_str)));
+                },
             }
         }
 
@@ -359,12 +334,7 @@ impl BinaryValue {
             ));
         }
 
-        let result: Vec<u8> = self
-            .0
-            .iter()
-            .zip(&other.0)
-            .map(|(a, b)| a & b)
-            .collect();
+        let result: Vec<u8> = self.0.iter().zip(&other.0).map(|(a, b)| a & b).collect();
 
         Ok(Self::new(result))
     }
@@ -377,12 +347,7 @@ impl BinaryValue {
             ));
         }
 
-        let result: Vec<u8> = self
-            .0
-            .iter()
-            .zip(&other.0)
-            .map(|(a, b)| a | b)
-            .collect();
+        let result: Vec<u8> = self.0.iter().zip(&other.0).map(|(a, b)| a | b).collect();
 
         Ok(Self::new(result))
     }
@@ -395,12 +360,7 @@ impl BinaryValue {
             ));
         }
 
-        let result: Vec<u8> = self
-            .0
-            .iter()
-            .zip(&other.0)
-            .map(|(a, b)| a ^ b)
-            .collect();
+        let result: Vec<u8> = self.0.iter().zip(&other.0).map(|(a, b)| a ^ b).collect();
 
         Ok(Self::new(result))
     }
@@ -469,9 +429,7 @@ impl BinaryValue {
             return Some(0);
         }
 
-        self.0
-            .windows(pattern.len())
-            .position(|window| window == pattern)
+        self.0.windows(pattern.len()).position(|window| window == pattern)
     }
 
     /// Counts occurrences of a byte
@@ -589,7 +547,7 @@ impl BinaryValue {
         let most_common = counts
             .iter()
             .enumerate()
-            .max_by_key(|(_, &count)| count)
+            .max_by_key(|&(_, count)| count)
             .map(|(byte, &count)| (byte as u8, count))
             .unwrap_or((0, 0));
 
@@ -730,9 +688,9 @@ impl FromStr for BinaryValue {
 
     fn from_str(s: &str) -> ValueResult<Self> {
         // Try to parse as hex first, then base64
-        if s.chars().all(|c| {
-            c.is_ascii_hexdigit() || c.is_ascii_whitespace() || c == ':' || c == '-'
-        }) {
+        if s.chars()
+            .all(|c| c.is_ascii_hexdigit() || c.is_ascii_whitespace() || c == ':' || c == '-')
+        {
             Self::from_hex(s)
         } else {
             Self::from_base64(s)
@@ -851,11 +809,8 @@ impl TryFrom<serde_json::Value> for BinaryValue {
                     })
                     .collect();
                 Ok(Self::new(bytes?))
-            }
-            other => Err(ValueError::custom(format!(
-                "Cannot convert {:?} to BinaryValue",
-                other
-            ))),
+            },
+            other => Err(ValueError::custom(format!("Cannot convert {:?} to BinaryValue", other))),
         }
     }
 }
@@ -923,7 +878,7 @@ mod tests {
 
     #[test]
     fn test_searching() {
-        let data = BinaryValue::from(b"hello world");
+        let data = BinaryValue::from(b"hello world".to_vec());
 
         assert_eq!(data.find_byte(b'o'), Some(4));
         assert_eq!(data.rfind_byte(b'o'), Some(7));
@@ -939,7 +894,7 @@ mod tests {
 
     #[test]
     fn test_statistics() {
-        let data = BinaryValue::from(b"aabbcc");
+        let data = BinaryValue::from(b"aabbcc".to_vec());
         let stats = data.byte_statistics();
 
         assert_eq!(stats.length, 6);
@@ -960,7 +915,7 @@ mod tests {
         assert_eq!(png.detect_file_type(), Some("png"));
 
         // Unknown type
-        let unknown = BinaryValue::from(b"just text");
+        let unknown = BinaryValue::from(b"just text".to_vec());
         assert_eq!(unknown.detect_file_type(), None);
     }
 
@@ -997,14 +952,14 @@ mod tests {
     #[cfg(feature = "json")]
     #[test]
     fn test_json_conversion() {
-        let data = BinaryValue::from(b"test data");
+        let data = BinaryValue::from(b"test data".to_vec());
         let json: serde_json::Value = data.clone().into();
 
         match json {
             serde_json::Value::String(base64_str) => {
                 let back = BinaryValue::from_base64(&base64_str).unwrap();
                 assert_eq!(back, data);
-            }
+            },
             _ => panic!("Expected JSON string"),
         }
     }

@@ -2,12 +2,12 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use std::time::Duration;
 use std::fmt;
-use std::ops::{Add, Sub, Mul, Div, Deref, DerefMut};
+use std::ops::{Add, Deref, DerefMut, Div, Mul, Sub};
+use std::time::Duration;
 
 /// Duration value for time intervals with rich functionality
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DurationValue(Duration);
 
@@ -67,7 +67,8 @@ impl DurationValue {
     pub fn from_secs_f64(secs: f64) -> ValueResult<Self> {
         if !secs.is_finite() || secs < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid duration: {} seconds must be finite and non-negative", secs
+                "Invalid duration: {} seconds must be finite and non-negative",
+                secs
             )));
         }
         Ok(Self(Duration::from_secs_f64(secs)))
@@ -84,7 +85,8 @@ impl DurationValue {
     pub fn from_secs_f32(secs: f32) -> ValueResult<Self> {
         if !secs.is_finite() || secs < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid duration: {} seconds must be finite and non-negative", secs
+                "Invalid duration: {} seconds must be finite and non-negative",
+                secs
             )));
         }
         Ok(Self(Duration::from_secs_f32(secs)))
@@ -293,7 +295,8 @@ impl DurationValue {
     pub fn multiply_f64(&self, factor: f64) -> ValueResult<Self> {
         if !factor.is_finite() || factor < 0.0 {
             return Err(ValueError::custom(format!(
-                "Invalid factor: {} must be finite and non-negative", factor
+                "Invalid factor: {} must be finite and non-negative",
+                factor
             )));
         }
 
@@ -315,7 +318,8 @@ impl DurationValue {
             return Err(ValueError::custom("Cannot divide into zero parts"));
         }
 
-        let each = self.checked_div(parts)
+        let each = self
+            .checked_div(parts)
             .ok_or_else(|| ValueError::custom("Duration too small to divide"))?;
 
         Ok(vec![each; parts as usize])
@@ -366,11 +370,7 @@ impl DurationValue {
         if total_nanos >= 1_000_000_000 {
             // >= 1 second
             let secs = self.as_secs_f64();
-            if secs >= 60.0 {
-                format!("{:.1}m", secs / 60.0)
-            } else {
-                format!("{:.1}s", secs)
-            }
+            if secs >= 60.0 { format!("{:.1}m", secs / 60.0) } else { format!("{:.1}s", secs) }
         } else if total_nanos >= 1_000_000 {
             // >= 1 millisecond
             format!("{}ms", self.as_millis())
@@ -427,7 +427,7 @@ impl DurationValue {
             _ => {
                 let last = parts.pop().unwrap();
                 format!("{}, and {}", parts.join(", "), last)
-            }
+            },
         }
     }
 
@@ -455,6 +455,22 @@ impl Default for DurationValue {
     }
 }
 
+impl TryFrom<f64> for DurationValue {
+    type Error = ValueError;
+
+    fn try_from(value: f64) -> Result<Self, Self::Error> {
+        if value < 0.0 {
+            Err(ValueError::type_conversion_with_value(
+                value.to_string(),
+                "DurationValue",
+                "negative duration is not allowed",
+            ))
+        } else {
+            Ok(DurationValue::from_secs_f64(value)?)
+        }
+    }
+}
+
 // === Display Implementation ===
 
 impl fmt::Display for DurationValue {
@@ -473,9 +489,7 @@ impl fmt::Display for DurationValue {
 #[cfg(feature = "json")]
 impl From<DurationValue> for serde_json::Value {
     fn from(duration: DurationValue) -> Self {
-        serde_json::Value::Number(
-            serde_json::Number::from(duration.as_millis() as u64)
-        )
+        serde_json::Value::Number(serde_json::Number::from(duration.as_millis() as u64))
     }
 }
 
@@ -494,42 +508,44 @@ impl TryFrom<serde_json::Value> for DurationValue {
                     Err(ValueError::type_conversion_with_value(
                         n.to_string(),
                         "DurationValue",
-                        "number must be non-negative".to_string()
+                        "number must be non-negative".to_string(),
                     ))
                 }
-            }
+            },
             serde_json::Value::String(s) => {
                 // Simple string parsing: "1000ms", "5s", "2.5s"
                 if let Some(stripped) = s.strip_suffix("ms") {
-                    stripped.parse::<u64>()
-                        .map(DurationValue::from_millis)
-                        .map_err(|_| ValueError::type_conversion_with_value(
+                    stripped.parse::<u64>().map(DurationValue::from_millis).map_err(|_| {
+                        ValueError::type_conversion_with_value(
                             s.clone(),
                             "DurationValue",
-                            "invalid milliseconds format".to_string()
-                        ))
+                            "invalid milliseconds format".to_string(),
+                        )
+                    })
                 } else if let Some(stripped) = s.strip_suffix("s") {
-                    stripped.parse::<f64>()
-                        .map_err(|_| ValueError::type_conversion_with_value(
-                            s.clone(),
-                            "DurationValue",
-                            "invalid seconds format".to_string()
-                        ))?
-                        .try_into()
+                    stripped
+                        .parse::<f64>()
+                        .map_err(|_| {
+                            ValueError::type_conversion_with_value(
+                                s.clone(),
+                                "DurationValue",
+                                "invalid seconds format".to_string(),
+                            )
+                        })
                         .and_then(DurationValue::from_secs_f64)
                 } else {
                     Err(ValueError::type_conversion_with_value(
                         s,
                         "DurationValue",
-                        "unsupported format - use '5s' or '1000ms'".to_string()
+                        "unsupported format - use '5s' or '1000ms'".to_string(),
                     ))
                 }
-            }
+            },
             other => Err(ValueError::type_conversion_with_value(
                 format!("{:?}", other),
                 "DurationValue",
-                "expected number or string".to_string()
-            ))
+                "expected number or string".to_string(),
+            )),
         }
     }
 }
@@ -757,8 +773,8 @@ mod tests {
         let json: serde_json::Value = dur.into();
         assert_eq!(json, serde_json::Value::Number(1500.into()));
 
-        let parsed: DurationValue = serde_json::Value::String("2.5s".to_string())
-            .try_into().unwrap();
+        let parsed: DurationValue =
+            serde_json::Value::String("2.5s".to_string()).try_into().unwrap();
         assert_eq!(parsed.as_millis(), 2500);
     }
 }

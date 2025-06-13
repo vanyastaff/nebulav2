@@ -1,6 +1,6 @@
+use crate::{Value, ValueError, ValueResult};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use crate::{Value, ValueError, ValueResult};
 
 use std::fmt;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
@@ -13,6 +13,8 @@ type InternalMap<K, V> = IndexMap<K, V>;
 
 #[cfg(not(feature = "collections"))]
 use std::collections::HashMap;
+use std::hash::Hash;
+
 #[cfg(not(feature = "collections"))]
 type InternalMap<K, V> = HashMap<K, V>;
 
@@ -20,7 +22,7 @@ type InternalMap<K, V> = HashMap<K, V>;
 ///
 /// Uses IndexMap when `collections` feature is enabled for ordered keys,
 /// falls back to HashMap when disabled.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 pub struct ObjectValue(InternalMap<String, Value>);
@@ -64,10 +66,7 @@ impl ObjectValue {
         K: Into<String>,
         V: Into<Value>,
     {
-        let map = pairs
-            .into_iter()
-            .map(|(k, v)| (k.into(), v.into()))
-            .collect();
+        let map = pairs.into_iter().map(|(k, v)| (k.into(), v.into())).collect();
         Self(map)
     }
 
@@ -244,14 +243,14 @@ impl ObjectValue {
             match current {
                 Value::Object(obj) => {
                     current = obj.get(part)?;
-                }
+                },
                 Value::Array(arr) => {
                     if let Ok(index) = part.parse::<usize>() {
                         current = arr.get(index)?;
                     } else {
                         return None;
                     }
-                }
+                },
                 _ => return None,
             }
         }
@@ -279,23 +278,21 @@ impl ObjectValue {
             match self.get_mut(first) {
                 Some(Value::Object(obj)) => {
                     obj.insert(second.to_string(), value);
-                }
+                },
                 Some(_) => {
                     return Err(ValueError::custom(format!(
                         "Cannot set nested value: '{}' is not an object",
                         first
                     )));
-                }
+                },
                 None => {
                     let mut new_obj = ObjectValue::new();
                     new_obj.insert(second.to_string(), value);
                     self.insert(first.to_string(), Value::Object(new_obj));
-                }
+                },
             }
         } else {
-            return Err(ValueError::custom(
-                "Deep nesting (>2 levels) not yet supported",
-            ));
+            return Err(ValueError::custom("Deep nesting (>2 levels) not yet supported"));
         }
 
         Ok(())
@@ -326,9 +323,7 @@ impl ObjectValue {
                 None => Ok(None),
             }
         } else {
-            Err(ValueError::custom(
-                "Deep nesting (>2 levels) not yet supported",
-            ))
+            Err(ValueError::custom("Deep nesting (>2 levels) not yet supported"))
         }
     }
 
@@ -480,10 +475,10 @@ impl ObjectValue {
             match (self.get_mut(k), v) {
                 (Some(Value::Object(existing)), Value::Object(incoming)) => {
                     existing.deep_merge(incoming)?;
-                }
+                },
                 _ => {
                     self.insert(k.clone(), v.clone());
-                }
+                },
             }
         }
         Ok(())
@@ -512,11 +507,7 @@ impl ObjectValue {
     where
         P: FnMut(&String, &Value) -> bool,
     {
-        self.0
-            .iter()
-            .filter(|(k, v)| predicate(k, v))
-            .map(|(k, _)| k.clone())
-            .collect()
+        self.0.iter().filter(|(k, v)| predicate(k, v)).map(|(k, _)| k.clone()).collect()
     }
 
     /// Finds all values that match a predicate
@@ -525,11 +516,7 @@ impl ObjectValue {
     where
         P: FnMut(&String, &Value) -> bool,
     {
-        self.0
-            .iter()
-            .filter(|(k, v)| predicate(k, v))
-            .map(|(_, v)| v.clone())
-            .collect()
+        self.0.iter().filter(|(k, v)| predicate(k, v)).map(|(_, v)| v.clone()).collect()
     }
 
     /// Finds the first key-value pair that matches a predicate
@@ -572,19 +559,15 @@ impl ObjectValue {
     /// Helper function for recursive flattening
     fn flatten_recursive(&self, prefix: &str, result: &mut InternalMap<String, Value>) {
         for (k, v) in &self.0 {
-            let key = if prefix.is_empty() {
-                k.clone()
-            } else {
-                format!("{}.{}", prefix, k)
-            };
+            let key = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
 
             match v {
                 Value::Object(obj) => {
                     obj.flatten_recursive(&key, result);
-                }
+                },
                 _ => {
                     result.insert(key, v.clone());
-                }
+                },
             }
         }
     }
@@ -608,13 +591,13 @@ impl ObjectValue {
             match v.as_string() {
                 Some(string_val) => {
                     result.insert(string_val.to_string(), Value::string(k.as_str()));
-                }
+                },
                 None => {
                     return Err(ValueError::custom(format!(
                         "Cannot invert object: value for key '{}' is not a string",
                         k
                     )));
-                }
+                },
             }
         }
 
@@ -666,7 +649,7 @@ impl ObjectValue {
 
     /// Converts to a regular HashMap (loses ordering)
     #[must_use]
-    pub fn to_hashmap(&self) -> HashMap<String, Value> {
+    pub fn to_hashmap(&self) -> InternalMap<String, Value> {
         self.0.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
     }
 
@@ -705,6 +688,15 @@ impl Default for ObjectValue {
 impl fmt::Display for ObjectValue {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[object with {} fields]", self.len())
+    }
+}
+
+impl Hash for ObjectValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        for (k, v) in &self.0 {
+            k.hash(state);
+            v.hash(state);
+        }
     }
 }
 
@@ -756,8 +748,8 @@ impl From<ObjectValue> for IndexMap<String, Value> {
     }
 }
 
-impl From<HashMap<String, Value>> for ObjectValue {
-    fn from(map: HashMap<String, Value>) -> Self {
+impl From<std::collections::HashMap<String, Value>> for ObjectValue {
+    fn from(map: std::collections::HashMap<String, Value>) -> Self {
         #[cfg(feature = "collections")]
         {
             Self(map.into_iter().collect())
@@ -769,7 +761,7 @@ impl From<HashMap<String, Value>> for ObjectValue {
     }
 }
 
-impl From<ObjectValue> for HashMap<String, Value> {
+impl From<ObjectValue> for std::collections::HashMap<String, Value> {
     fn from(obj: ObjectValue) -> Self {
         obj.0.into_iter().collect()
     }
@@ -785,11 +777,7 @@ impl FromIterator<(String, Value)> for ObjectValue {
 
 impl<'a> FromIterator<(&'a str, Value)> for ObjectValue {
     fn from_iter<T: IntoIterator<Item = (&'a str, Value)>>(iter: T) -> Self {
-        Self(
-            iter.into_iter()
-                .map(|(k, v)| (k.to_string(), v))
-                .collect(),
-        )
+        Self(iter.into_iter().map(|(k, v)| (k.to_string(), v)).collect())
     }
 }
 
@@ -801,8 +789,7 @@ impl Extend<(String, Value)> for ObjectValue {
 
 impl<'a> Extend<(&'a str, Value)> for ObjectValue {
     fn extend<T: IntoIterator<Item = (&'a str, Value)>>(&mut self, iter: T) {
-        self.0
-            .extend(iter.into_iter().map(|(k, v)| (k.to_string(), v)));
+        self.0.extend(iter.into_iter().map(|(k, v)| (k.to_string(), v)));
     }
 }
 
@@ -850,16 +837,11 @@ impl TryFrom<serde_json::Value> for ObjectValue {
     fn try_from(value: serde_json::Value) -> ValueResult<Self> {
         match value {
             serde_json::Value::Object(map) => {
-                let converted: Result<InternalMap<String, Value>, ValueError> = map
-                    .into_iter()
-                    .map(|(k, v)| Ok((k, v.try_into()?)))
-                    .collect();
+                let converted: Result<InternalMap<String, Value>, ValueError> =
+                    map.into_iter().map(|(k, v)| Ok((k, v.try_into()?))).collect();
                 Ok(Self(converted?))
-            }
-            other => Err(ValueError::custom(format!(
-                "Cannot convert {:?} to ObjectValue",
-                other
-            ))),
+            },
+            other => Err(ValueError::custom(format!("Cannot convert {:?} to ObjectValue", other))),
         }
     }
 }
@@ -874,10 +856,8 @@ mod tests {
         assert!(empty.is_empty());
         assert_eq!(empty.len(), 0);
 
-        let obj = ObjectValue::from_pairs([
-            ("name", Value::string("John")),
-            ("age", Value::number(30)),
-        ]);
+        let obj =
+            ObjectValue::from_pairs([("name", Value::string("John")), ("age", Value::number(30))]);
         assert_eq!(obj.len(), 2);
         assert_eq!(obj.get("name"), Some(&Value::string("John")));
     }
@@ -906,8 +886,7 @@ mod tests {
         let mut obj = ObjectValue::new();
 
         // Set nested value
-        obj.set_nested("user.name", Value::string("Alice"))
-            .unwrap();
+        obj.set_nested("user.name", Value::string("Alice")).unwrap();
 
         // Get nested value
         let name = obj.get_nested_cloned("user.name");
@@ -920,15 +899,9 @@ mod tests {
 
     #[test]
     fn test_merging() {
-        let mut obj1 = ObjectValue::from_pairs([
-            ("a", Value::number(1)),
-            ("b", Value::number(2)),
-        ]);
+        let mut obj1 = ObjectValue::from_pairs([("a", Value::number(1)), ("b", Value::number(2))]);
 
-        let obj2 = ObjectValue::from_pairs([
-            ("b", Value::number(3)),
-            ("c", Value::number(4)),
-        ]);
+        let obj2 = ObjectValue::from_pairs([("b", Value::number(3)), ("c", Value::number(4))]);
 
         obj1.merge(&obj2);
 
@@ -958,10 +931,7 @@ mod tests {
 
     #[test]
     fn test_transformation() {
-        let obj = ObjectValue::from_pairs([
-            ("a", Value::number(1)),
-            ("b", Value::number(2)),
-        ]);
+        let obj = ObjectValue::from_pairs([("a", Value::number(1)), ("b", Value::number(2))]);
 
         // Map values
         let doubled = obj

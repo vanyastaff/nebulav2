@@ -1,14 +1,15 @@
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::{ValueError, ValueResult};
 use std::cmp::Ordering;
 use std::fmt;
+use std::hash::Hash;
 use std::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use std::str::FromStr;
-use crate::{ValueError, ValueResult};
 
 /// Number value type supporting both integers and floating-point numbers
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(untagged))]
 pub enum NumberValue {
@@ -251,14 +252,16 @@ impl NumberValue {
         match self {
             Self::Integer(i) => Ok(*i),
             Self::Float(f) => {
-                if f.fract() == 0.0 && f.is_finite() && *f >= i64::MIN as f64 && *f <= i64::MAX as f64 {
+                if f.fract() == 0.0
+                    && f.is_finite()
+                    && *f >= i64::MIN as f64
+                    && *f <= i64::MAX as f64
+                {
                     Ok(*f as i64)
                 } else {
-                    Err(ValueError::custom(format!(
-                        "Cannot convert {} to integer", f
-                    )))
+                    Err(ValueError::custom(format!("Cannot convert {} to integer", f)))
                 }
-            }
+            },
         }
     }
 
@@ -268,9 +271,7 @@ impl NumberValue {
         if i64_val >= i32::MIN as i64 && i64_val <= i32::MAX as i64 {
             Ok(i64_val as i32)
         } else {
-            Err(ValueError::custom(format!(
-                "Value {} is out of range for i32", i64_val
-            )))
+            Err(ValueError::custom(format!("Value {} is out of range for i32", i64_val)))
         }
     }
 
@@ -280,9 +281,7 @@ impl NumberValue {
         if i64_val >= 0 && i64_val <= usize::MAX as i64 {
             Ok(i64_val as usize)
         } else {
-            Err(ValueError::custom(format!(
-                "Value {} is out of range for usize", i64_val
-            )))
+            Err(ValueError::custom(format!("Value {} is out of range for usize", i64_val)))
         }
     }
 
@@ -291,11 +290,10 @@ impl NumberValue {
     /// Safe addition
     pub fn add(&self, other: &Self) -> ValueResult<Self> {
         match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => {
-                a.checked_add(*b)
-                    .map(Self::Integer)
-                    .ok_or_else(|| ValueError::custom("Integer overflow in addition"))
-            }
+            (Self::Integer(a), Self::Integer(b)) => a
+                .checked_add(*b)
+                .map(Self::Integer)
+                .ok_or_else(|| ValueError::custom("Integer overflow in addition")),
             _ => Ok(Self::Float(self.as_f64() + other.as_f64())),
         }
     }
@@ -303,11 +301,10 @@ impl NumberValue {
     /// Safe subtraction
     pub fn subtract(&self, other: &Self) -> ValueResult<Self> {
         match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => {
-                a.checked_sub(*b)
-                    .map(Self::Integer)
-                    .ok_or_else(|| ValueError::custom("Integer overflow in subtraction"))
-            }
+            (Self::Integer(a), Self::Integer(b)) => a
+                .checked_sub(*b)
+                .map(Self::Integer)
+                .ok_or_else(|| ValueError::custom("Integer overflow in subtraction")),
             _ => Ok(Self::Float(self.as_f64() - other.as_f64())),
         }
     }
@@ -315,11 +312,10 @@ impl NumberValue {
     /// Safe multiplication
     pub fn multiply(&self, other: &Self) -> ValueResult<Self> {
         match (self, other) {
-            (Self::Integer(a), Self::Integer(b)) => {
-                a.checked_mul(*b)
-                    .map(Self::Integer)
-                    .ok_or_else(|| ValueError::custom("Integer overflow in multiplication"))
-            }
+            (Self::Integer(a), Self::Integer(b)) => a
+                .checked_mul(*b)
+                .map(Self::Integer)
+                .ok_or_else(|| ValueError::custom("Integer overflow in multiplication")),
             _ => Ok(Self::Float(self.as_f64() * other.as_f64())),
         }
     }
@@ -648,7 +644,8 @@ impl NumberValue {
         if let Some(min_val) = min {
             if value < min_val {
                 return Err(ValueError::custom(format!(
-                    "Value {} is less than minimum {}", value, min_val
+                    "Value {} is less than minimum {}",
+                    value, min_val
                 )));
             }
         }
@@ -656,7 +653,8 @@ impl NumberValue {
         if let Some(max_val) = max {
             if value > max_val {
                 return Err(ValueError::custom(format!(
-                    "Value {} is greater than maximum {}", value, max_val
+                    "Value {} is greater than maximum {}",
+                    value, max_val
                 )));
             }
         }
@@ -667,9 +665,7 @@ impl NumberValue {
     /// Validates that the number is positive
     pub fn validate_positive(&self) -> ValueResult<()> {
         if !self.is_positive() {
-            return Err(ValueError::custom(format!(
-                "Value {} must be positive", self.as_f64()
-            )));
+            return Err(ValueError::custom(format!("Value {} must be positive", self.as_f64())));
         }
         Ok(())
     }
@@ -678,7 +674,8 @@ impl NumberValue {
     pub fn validate_non_negative(&self) -> ValueResult<()> {
         if self.is_negative() {
             return Err(ValueError::custom(format!(
-                "Value {} must be non-negative", self.as_f64()
+                "Value {} must be non-negative",
+                self.as_f64()
             )));
         }
         Ok(())
@@ -692,11 +689,9 @@ impl NumberValue {
                 if f.fract() == 0.0 {
                     Ok(())
                 } else {
-                    Err(ValueError::custom(format!(
-                        "Value {} must be an integer", f
-                    )))
+                    Err(ValueError::custom(format!("Value {} must be an integer", f)))
                 }
-            }
+            },
         }
     }
 
@@ -761,12 +756,8 @@ impl fmt::Display for NumberValue {
             Self::Integer(i) => write!(f, "{}", i),
             Self::Float(fl) => {
                 // Format floats nicely
-                if fl.fract() == 0.0 {
-                    write!(f, "{:.0}", fl)
-                } else {
-                    write!(f, "{}", fl)
-                }
-            }
+                if fl.fract() == 0.0 { write!(f, "{:.0}", fl) } else { write!(f, "{}", fl) }
+            },
         }
     }
 }
@@ -782,7 +773,7 @@ impl FromStr for NumberValue {
             "infinity" | "inf" | "+infinity" | "+inf" => return Ok(Self::INFINITY),
             "-infinity" | "-inf" => return Ok(Self::NEG_INFINITY),
             "nan" => return Err(ValueError::custom("NaN is not a valid number")),
-            _ => {}
+            _ => {},
         }
 
         // Try parsing as integer first (if no decimal point)
@@ -805,12 +796,44 @@ impl FromStr for NumberValue {
     }
 }
 
-// === Ordering ===
+// === Equality and Ordering ===
+
+impl PartialEq for NumberValue {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Integer(a), Self::Integer(b)) => a == b,
+            (Self::Float(a), Self::Float(b)) => a == b,
+            (Self::Integer(a), Self::Float(b)) => (*a as f64) == *b,
+            (Self::Float(a), Self::Integer(b)) => *a == (*b as f64),
+        }
+    }
+}
+
+impl Eq for NumberValue {}
 
 impl PartialOrd for NumberValue {
     #[inline]
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         self.as_f64().partial_cmp(&other.as_f64())
+    }
+}
+
+impl Ord for NumberValue {
+    #[inline]
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_f64().partial_cmp(&other.as_f64()).unwrap_or(Ordering::Equal)
+    }
+}
+
+/// === Hash Implementation ===
+
+impl Hash for NumberValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        match self {
+            Self::Integer(i) => i.hash(state),
+            Self::Float(f) => f.to_bits().hash(state),
+        }
     }
 }
 
@@ -899,7 +922,7 @@ impl Add for NumberValue {
                 } else {
                     Self::Float(a as f64 + b as f64)
                 }
-            }
+            },
             _ => Self::Float(self.as_f64() + rhs.as_f64()),
         }
     }
@@ -940,7 +963,7 @@ impl Sub for NumberValue {
                 } else {
                     Self::Float(a as f64 - b as f64)
                 }
-            }
+            },
             _ => Self::Float(self.as_f64() - rhs.as_f64()),
         }
     }
@@ -981,7 +1004,7 @@ impl Mul for NumberValue {
                 } else {
                     Self::Float(a as f64 * b as f64)
                 }
-            }
+            },
             _ => Self::Float(self.as_f64() * rhs.as_f64()),
         }
     }
@@ -1105,11 +1128,9 @@ impl From<NumberValue> for serde_json::Value {
     fn from(value: NumberValue) -> Self {
         match value {
             NumberValue::Integer(i) => serde_json::Value::Number(i.into()),
-            NumberValue::Float(f) => {
-                serde_json::Number::from_f64(f)
-                    .map(serde_json::Value::Number)
-                    .unwrap_or(serde_json::Value::Null)
-            }
+            NumberValue::Float(f) => serde_json::Number::from_f64(f)
+                .map(serde_json::Value::Number)
+                .unwrap_or(serde_json::Value::Null),
         }
     }
 }
@@ -1128,11 +1149,9 @@ impl TryFrom<serde_json::Value> for NumberValue {
                 } else {
                     Err(ValueError::custom("Invalid JSON number"))
                 }
-            }
+            },
             serde_json::Value::String(s) => Self::from_str(&s),
-            other => Err(ValueError::custom(format!(
-                "Cannot convert {:?} to NumberValue", other
-            ))),
+            other => Err(ValueError::custom(format!("Cannot convert {:?} to NumberValue", other))),
         }
     }
 }

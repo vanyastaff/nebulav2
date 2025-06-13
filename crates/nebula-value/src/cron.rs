@@ -2,12 +2,12 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{ValueError, ValueResult};
-use chrono::{DateTime, Utc, Duration as ChronoDuration, Datelike, Timelike};
+use chrono::{DateTime, Datelike, Duration as ChronoDuration, Timelike, Utc};
 use std::fmt;
 use std::str::FromStr;
 
 /// Cron expression value for scheduling with rich functionality
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct CronValue {
     expression: String,
@@ -22,10 +22,7 @@ impl CronValue {
         let expr_str = expression.as_ref().trim();
         let parsed = CronExpression::parse(expr_str)?;
 
-        Ok(Self {
-            expression: expr_str.to_string(),
-            parsed,
-        })
+        Ok(Self { expression: expr_str.to_string(), parsed })
     }
 
     /// Creates a cron expression that runs every minute
@@ -146,18 +143,26 @@ impl CronValue {
         let parts = self.parts();
 
         // Check for patterns like "*/N * * * *" or "0 */N * * *"
-        (parts.minute.contains('/') && parts.hour == "*" && parts.day == "*" &&
-            parts.month == "*" && parts.day_of_week == "*") ||
-            (parts.minute == "0" && parts.hour.contains('/') && parts.day == "*" &&
-                parts.month == "*" && parts.day_of_week == "*")
+        (parts.minute.contains('/')
+            && parts.hour == "*"
+            && parts.day == "*"
+            && parts.month == "*"
+            && parts.day_of_week == "*")
+            || (parts.minute == "0"
+                && parts.hour.contains('/')
+                && parts.day == "*"
+                && parts.month == "*"
+                && parts.day_of_week == "*")
     }
 
     /// Returns whether this cron runs multiple times per day
     #[must_use]
     pub fn runs_multiple_times_daily(&self) -> bool {
         let parts = self.parts();
-        parts.minute.contains('*') || parts.minute.contains('/') ||
-            parts.hour.contains('*') || parts.hour.contains('/')
+        parts.minute.contains('*')
+            || parts.minute.contains('/')
+            || parts.hour.contains('*')
+            || parts.hour.contains('/')
     }
 
     // === Schedule Calculation ===
@@ -285,19 +290,14 @@ impl CronValue {
     #[must_use]
     pub fn is_equivalent_to(&self, other: &CronValue) -> bool {
         // Simple check - could be more sophisticated
-        self.expression == other.expression ||
-            self.normalize() == other.normalize()
+        self.expression == other.expression || self.normalize() == other.normalize()
     }
 
     /// Normalize the cron expression (convert equivalent forms)
     #[must_use]
     pub fn normalize(&self) -> String {
         // Convert "*/1" to "*", remove extra spaces, etc.
-        self.expression
-            .replace("*/1", "*")
-            .split_whitespace()
-            .collect::<Vec<_>>()
-            .join(" ")
+        self.expression.replace("*/1", "*").split_whitespace().collect::<Vec<_>>().join(" ")
     }
 
     /// Validate that the next execution time is reasonable
@@ -312,7 +312,7 @@ impl CronValue {
                 } else {
                     Ok(())
                 }
-            }
+            },
             None => Err(ValueError::custom("No future execution time found")),
         }
     }
@@ -321,12 +321,13 @@ impl CronValue {
 // === Helper Structures ===
 
 /// Represents the parsed components of a cron expression
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 struct CronExpression {
-    minute: String,     // 0-59
-    hour: String,       // 0-23
-    day: String,        // 1-31
-    month: String,      // 1-12
+    minute: String,      // 0-59
+    hour: String,        // 0-23
+    day: String,         // 1-31
+    month: String,       // 1-12
     day_of_week: String, // 0-7 (0 and 7 are Sunday)
 }
 
@@ -336,7 +337,8 @@ impl CronExpression {
 
         if parts.len() != 5 {
             return Err(ValueError::custom(format!(
-                "Cron expression must have exactly 5 parts, got {}", parts.len()
+                "Cron expression must have exactly 5 parts, got {}",
+                parts.len()
             )));
         }
 
@@ -372,13 +374,18 @@ impl CronExpression {
             if parts.len() != 2 {
                 return Err(ValueError::custom(format!("Invalid range in {}: {}", name, field)));
             }
-            let start: u32 = parts[0].parse()
-                .map_err(|_| ValueError::custom(format!("Invalid range start in {}: {}", name, parts[0])))?;
-            let end: u32 = parts[1].parse()
-                .map_err(|_| ValueError::custom(format!("Invalid range end in {}: {}", name, parts[1])))?;
+            let start: u32 = parts[0].parse().map_err(|_| {
+                ValueError::custom(format!("Invalid range start in {}: {}", name, parts[0]))
+            })?;
+            let end: u32 = parts[1].parse().map_err(|_| {
+                ValueError::custom(format!("Invalid range end in {}: {}", name, parts[1]))
+            })?;
 
             if start < min || start > max || end < min || end > max || start > end {
-                return Err(ValueError::custom(format!("Invalid range in {}: {}-{}", name, start, end)));
+                return Err(ValueError::custom(format!(
+                    "Invalid range in {}: {}-{}",
+                    name, start, end
+                )));
             }
             return Ok(());
         }
@@ -390,8 +397,9 @@ impl CronExpression {
                 return Err(ValueError::custom(format!("Invalid step in {}: {}", name, field)));
             }
 
-            let step: u32 = parts[1].parse()
-                .map_err(|_| ValueError::custom(format!("Invalid step value in {}: {}", name, parts[1])))?;
+            let step: u32 = parts[1].parse().map_err(|_| {
+                ValueError::custom(format!("Invalid step value in {}: {}", name, parts[1]))
+            })?;
 
             if step == 0 {
                 return Err(ValueError::custom(format!("Step value cannot be zero in {}", name)));
@@ -413,11 +421,15 @@ impl CronExpression {
         }
 
         // Handle single values
-        let value: u32 = field.parse()
+        let value: u32 = field
+            .parse()
             .map_err(|_| ValueError::custom(format!("Invalid value in {}: {}", name, field)))?;
 
         if value < min || value > max {
-            return Err(ValueError::custom(format!("Value {} out of range for {}: {}-{}", value, name, min, max)));
+            return Err(ValueError::custom(format!(
+                "Value {} out of range for {}: {}-{}",
+                value, name, min, max
+            )));
         }
 
         Ok(())
@@ -435,7 +447,7 @@ impl CronExpression {
             minute if minute.starts_with("*/") => {
                 let interval = minute.strip_prefix("*/").unwrap();
                 parts.push(format!("every {} minutes", interval));
-            }
+            },
             minute => parts.push(format!("at minute {}", minute)),
         }
 
@@ -447,7 +459,7 @@ impl CronExpression {
             hour if hour.starts_with("*/") => {
                 let interval = hour.strip_prefix("*/").unwrap();
                 parts.push(format!("every {} hours", interval));
-            }
+            },
             hour => parts.push(format!("at hour {}", hour)),
         }
 
@@ -463,13 +475,22 @@ impl CronExpression {
             "*" => {},
             month => {
                 let month_name = match month {
-                    "1" => "January", "2" => "February", "3" => "March", "4" => "April",
-                    "5" => "May", "6" => "June", "7" => "July", "8" => "August",
-                    "9" => "September", "10" => "October", "11" => "November", "12" => "December",
+                    "1" => "January",
+                    "2" => "February",
+                    "3" => "March",
+                    "4" => "April",
+                    "5" => "May",
+                    "6" => "June",
+                    "7" => "July",
+                    "8" => "August",
+                    "9" => "September",
+                    "10" => "October",
+                    "11" => "November",
+                    "12" => "December",
                     _ => month,
                 };
                 parts.push(format!("in {}", month_name));
-            }
+            },
         }
 
         // Day of week
@@ -485,11 +506,7 @@ impl CronExpression {
             day => parts.push(format!("on day {} of week", day)),
         }
 
-        if parts.is_empty() {
-            "every minute".to_string()
-        } else {
-            parts.join(", ")
-        }
+        if parts.is_empty() { "every minute".to_string() } else { parts.join(", ") }
     }
 
     fn next_execution_after(&self, after: DateTime<Utc>) -> Option<DateTime<Utc>> {
@@ -498,7 +515,8 @@ impl CronExpression {
         let mut candidate = after.with_second(0)?.with_nanosecond(0)? + ChronoDuration::minutes(1);
 
         // Search for the next valid time (with a reasonable limit)
-        for _ in 0..366 * 24 * 60 { // Search up to a year
+        for _ in 0..366 * 24 * 60 {
+            // Search up to a year
             if self.matches(candidate) {
                 return Some(candidate);
             }
@@ -512,7 +530,8 @@ impl CronExpression {
         let mut candidate = before.with_second(0)?.with_nanosecond(0)? - ChronoDuration::minutes(1);
 
         // Search for the previous valid time (with a reasonable limit)
-        for _ in 0..366 * 24 * 60 { // Search up to a year back
+        for _ in 0..366 * 24 * 60 {
+            // Search up to a year back
             if self.matches(candidate) {
                 return Some(candidate);
             }
@@ -523,11 +542,11 @@ impl CronExpression {
     }
 
     fn matches(&self, datetime: DateTime<Utc>) -> bool {
-        self.matches_field(&self.minute, datetime.minute()) &&
-            self.matches_field(&self.hour, datetime.hour()) &&
-            self.matches_field(&self.day, datetime.day()) &&
-            self.matches_field(&self.month, datetime.month()) &&
-            self.matches_day_of_week(&self.day_of_week, datetime)
+        self.matches_field(&self.minute, datetime.minute())
+            && self.matches_field(&self.hour, datetime.hour())
+            && self.matches_field(&self.day, datetime.day())
+            && self.matches_field(&self.month, datetime.month())
+            && self.matches_day_of_week(&self.day_of_week, datetime)
     }
 
     fn matches_field(&self, field: &str, value: u32) -> bool {
@@ -559,9 +578,9 @@ impl CronExpression {
 
         // Handle lists
         if field.contains(',') {
-            return field.split(',').any(|part| {
-                part.trim().parse::<u32>().map_or(false, |v| v == value)
-            });
+            return field
+                .split(',')
+                .any(|part| part.trim().parse::<u32>().map_or(false, |v| v == value));
         }
 
         // Handle single value
@@ -642,14 +661,12 @@ impl TryFrom<serde_json::Value> for CronValue {
 
     fn try_from(value: serde_json::Value) -> ValueResult<Self> {
         match value {
-            serde_json::Value::String(expression) => {
-                Self::new(expression)
-            }
+            serde_json::Value::String(expression) => Self::new(expression),
             other => Err(ValueError::type_conversion_with_value(
                 format!("{:?}", other),
                 "CronValue",
-                "expected string cron expression".to_string()
-            ))
+                "expected string cron expression".to_string(),
+            )),
         }
     }
 }
@@ -717,10 +734,14 @@ mod tests {
 
         // Create a datetime for 2:30 PM
         let test_time = Utc::now()
-            .with_hour(14).unwrap()
-            .with_minute(30).unwrap()
-            .with_second(0).unwrap()
-            .with_nanosecond(0).unwrap();
+            .with_hour(14)
+            .unwrap()
+            .with_minute(30)
+            .unwrap()
+            .with_second(0)
+            .unwrap()
+            .with_nanosecond(0)
+            .unwrap();
 
         assert!(cron.matches(test_time));
 
@@ -746,8 +767,8 @@ mod tests {
         let json: serde_json::Value = cron.into();
         assert_eq!(json, serde_json::Value::String("0 0 * * *".to_string()));
 
-        let parsed: CronValue = serde_json::Value::String("0 12 * * *".to_string())
-            .try_into().unwrap();
+        let parsed: CronValue =
+            serde_json::Value::String("0 12 * * *".to_string()).try_into().unwrap();
         assert_eq!(parsed.expression(), "0 12 * * *");
     }
 }

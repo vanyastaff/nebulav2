@@ -1,6 +1,6 @@
+use crate::{Value, ValueError, ValueResult};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use crate::{Value, ValueError, ValueResult};
 use std::fmt;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 
@@ -8,7 +8,7 @@ use std::ops::{Deref, DerefMut, Index, IndexMut};
 use indexmap::IndexSet;
 
 /// Array value type with efficient operations and functional programming support
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "serde", serde(transparent))]
 pub struct ArrayValue(Vec<Value>);
@@ -133,16 +133,14 @@ impl ArrayValue {
     /// Safe element access with error handling
     #[inline]
     pub fn try_get(&self, index: usize) -> ValueResult<&Value> {
-        self.get(index)
-            .ok_or_else(|| ValueError::index_out_of_bounds(index, self.len()))
+        self.get(index).ok_or_else(|| ValueError::index_out_of_bounds(index, self.len()))
     }
 
     /// Safe mutable element access with error handling
     #[inline]
     pub fn try_get_mut(&mut self, index: usize) -> ValueResult<&mut Value> {
         let len = self.len();
-        self.get_mut(index)
-            .ok_or_else(|| ValueError::index_out_of_bounds(index, len))
+        self.get_mut(index).ok_or_else(|| ValueError::index_out_of_bounds(index, len))
     }
 
     /// Gets the first element
@@ -344,12 +342,7 @@ impl ArrayValue {
     where
         P: FnMut(&Value) -> bool,
     {
-        let result: Vec<Value> = self
-            .0
-            .iter()
-            .filter(|value| predicate(value))
-            .cloned()
-            .collect();
+        let result: Vec<Value> = self.0.iter().filter(|value| predicate(value)).cloned().collect();
         ArrayValue::new(result)
     }
 
@@ -451,8 +444,7 @@ impl ArrayValue {
 
     /// Sorts the array in-place
     pub fn sort(&mut self) -> ValueResult<()> {
-        self.0
-            .sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        self.0.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         Ok(())
     }
 
@@ -567,11 +559,8 @@ impl ArrayValue {
             return Err(ValueError::custom("Chunk size cannot be zero"));
         }
 
-        let chunks: Vec<ArrayValue> = self
-            .0
-            .chunks(chunk_size)
-            .map(|chunk| ArrayValue::new(chunk.to_vec()))
-            .collect();
+        let chunks: Vec<ArrayValue> =
+            self.0.chunks(chunk_size).map(|chunk| ArrayValue::new(chunk.to_vec())).collect();
 
         Ok(chunks)
     }
@@ -681,7 +670,7 @@ where
     T: Into<Value>,
 {
     fn from(values: Vec<T>) -> Self {
-        ArrayValue::new(values.into_iter().map(Into::into).collect())
+        ArrayValue::new(values.into_iter().map(Into::into).collect::<Vec<Value>>())
     }
 }
 
@@ -694,7 +683,7 @@ impl From<ArrayValue> for Vec<Value> {
 // Collection traits
 impl FromIterator<Value> for ArrayValue {
     fn from_iter<T: IntoIterator<Item = Value>>(iter: T) -> Self {
-        ArrayValue::new(iter.into_iter().collect())
+        ArrayValue::new(iter.into_iter().collect::<Vec<Value>>())
     }
 }
 
@@ -749,7 +738,7 @@ impl TryFrom<serde_json::Value> for ArrayValue {
                 let values: Result<Vec<Value>, ValueError> =
                     arr.into_iter().map(|v| v.try_into()).collect();
                 Ok(ArrayValue::new(values?))
-            }
+            },
             other => Err(ValueError::type_conversion_with_value(
                 other.to_string(),
                 "ArrayValue",
@@ -833,9 +822,9 @@ mod tests {
         let json: serde_json::Value = arr.clone().into();
 
         match json {
-            serde_json::Value::Array(json_arr) => {
+            serde_json::Value::Array(ref json_arr) => {
                 assert_eq!(json_arr.len(), 2);
-            }
+            },
             _ => panic!("Expected JSON array"),
         }
 

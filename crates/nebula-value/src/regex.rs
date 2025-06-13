@@ -3,6 +3,7 @@ use regex::{Captures, Regex};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
+use std::hash::Hash;
 use std::str::FromStr;
 
 /// Regular expression value with rich pattern matching functionality
@@ -44,10 +45,7 @@ impl RegexValue {
         let compiled = Regex::new(&pattern_str)
             .map_err(|e| ValueError::custom(format!("Invalid regex '{}': {}", pattern_str, e)))?;
 
-        Ok(Self {
-            pattern: pattern_str,
-            compiled,
-        })
+        Ok(Self { pattern: pattern_str, compiled })
     }
 
     /// Creates a regex with case-insensitive matching
@@ -214,46 +212,34 @@ impl RegexValue {
     pub fn find_all(&self, text: &str) -> Vec<RegexMatch> {
         self.compiled
             .find_iter(text)
-            .map(|m| RegexMatch {
-                text: m.as_str().to_string(),
-                start: m.start(),
-                end: m.end(),
-            })
+            .map(|m| RegexMatch { text: m.as_str().to_string(), start: m.start(), end: m.end() })
             .collect()
     }
 
     /// Captures the first match with groups
     #[must_use]
     pub fn captures(&self, text: &str) -> Option<RegexCaptures> {
-        self.compiled
-            .captures(text)
-            .map(|caps| self.build_regex_captures(&caps))
+        self.compiled.captures(text).map(|caps| self.build_regex_captures(&caps))
     }
 
     /// Captures all matches with groups
     #[must_use]
     pub fn captures_all(&self, text: &str) -> Vec<RegexCaptures> {
-        self.compiled
-            .captures_iter(text)
-            .map(|caps| self.build_regex_captures(&caps))
-            .collect()
+        self.compiled.captures_iter(text).map(|caps| self.build_regex_captures(&caps)).collect()
     }
 
     // === Helper Methods ===
 
     /// Build RegexCaptures from Captures (reduces code duplication)
     fn build_regex_captures(&self, caps: &Captures) -> RegexCaptures {
-        let groups: Vec<Option<String>> = caps
-            .iter()
-            .map(|m| m.map(|m| m.as_str().to_string()))
-            .collect();
+        let groups: Vec<Option<String>> =
+            caps.iter().map(|m| m.map(|m| m.as_str().to_string())).collect();
 
         let named_groups: std::collections::HashMap<String, String> = caps
             .iter()
             .enumerate()
             .filter_map(|(i, m)| {
-                if let (Some(name), Some(mat)) =
-                    (self.compiled.capture_names().nth(i).flatten(), m)
+                if let (Some(name), Some(mat)) = (self.compiled.capture_names().nth(i).flatten(), m)
                 {
                     Some((name.to_string(), mat.as_str().to_string()))
                 } else {
@@ -263,10 +249,7 @@ impl RegexValue {
             .collect();
 
         RegexCaptures {
-            full_match: caps
-                .get(0)
-                .map(|m| m.as_str().to_string())
-                .unwrap_or_default(),
+            full_match: caps.get(0).map(|m| m.as_str().to_string()).unwrap_or_default(),
             groups,
             named_groups,
         }
@@ -320,10 +303,7 @@ impl RegexValue {
     /// Split text by the regex pattern with a limit
     #[must_use]
     pub fn splitn(&self, text: &str, limit: usize) -> Vec<String> {
-        self.compiled
-            .splitn(text, limit)
-            .map(|s| s.to_string())
-            .collect()
+        self.compiled.splitn(text, limit).map(|s| s.to_string()).collect()
     }
 
     // === Validation Methods ===
@@ -376,10 +356,7 @@ impl RegexValue {
     /// Test the regex against multiple test strings
     #[must_use]
     pub fn test_against(&self, test_strings: &[&str]) -> Vec<(String, bool)> {
-        test_strings
-            .iter()
-            .map(|&s| (s.to_string(), self.is_match(s)))
-            .collect()
+        test_strings.iter().map(|&s| (s.to_string(), self.is_match(s))).collect()
     }
 
     /// Get the underlying Regex object
@@ -494,6 +471,12 @@ impl TryFrom<String> for RegexValue {
     }
 }
 
+impl Hash for RegexValue {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.pattern.hash(state);
+    }
+}
+
 // === JSON Conversion (feature-gated) ===
 
 #[cfg(feature = "json")]
@@ -599,9 +582,7 @@ mod tests {
         let json: serde_json::Value = regex.into();
         assert_eq!(json, serde_json::Value::String(r"\d+".to_string()));
 
-        let parsed: RegexValue = serde_json::Value::String(r"\w+".to_string())
-            .try_into()
-            .unwrap();
+        let parsed: RegexValue = serde_json::Value::String(r"\w+".to_string()).try_into().unwrap();
         assert_eq!(parsed.pattern(), r"\w+");
     }
 

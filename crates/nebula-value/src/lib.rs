@@ -43,7 +43,7 @@
 //! ```
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 #![warn(clippy::all)]
 #![deny(unsafe_code)]
 
@@ -58,7 +58,6 @@ pub mod duration;
 pub mod error;
 pub mod expression;
 pub mod file;
-pub mod group;
 pub mod mode;
 pub mod number;
 pub mod object;
@@ -79,7 +78,6 @@ pub use datetime::DateTimeValue;
 pub use duration::DurationValue;
 pub use expression::ExpressionValue;
 pub use file::FileValue;
-pub use group::GroupValue;
 pub use mode::ModeValue;
 pub use number::NumberValue;
 pub use object::ObjectValue;
@@ -92,9 +90,9 @@ pub use error::{ValueError, ValueResult};
 /// Prelude module for convenient imports
 pub mod prelude {
     pub use crate::{
-        ArrayValue, BinaryValue, BooleanValue, ColorValue, CronValue,
-        DateTimeValue, DurationValue, ExpressionValue, FileValue, GroupValue, ModeValue,
-        NumberValue, ObjectValue, RegexValue, StringValue, Value, ValueError, ValueResult,
+        ArrayValue, BinaryValue, BooleanValue, ColorValue, CronValue, DateTimeValue, DurationValue,
+        ExpressionValue, FileValue, ModeValue, NumberValue, ObjectValue, RegexValue, StringValue,
+        Value, ValueError, ValueResult,
     };
 }
 
@@ -106,7 +104,7 @@ pub mod json {
     //!
     //! Available when both `json` and `serde` features are enabled.
 
-    pub use serde_json::{from_str, from_value, to_string, to_value, to_vec, Map};
+    pub use serde_json::{Map, from_str, from_value, to_string, to_value, to_vec};
 
     /// Convert a Value to a serde_json::Value
     pub fn value_to_json(value: &crate::Value) -> serde_json::Result<serde_json::Value> {

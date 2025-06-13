@@ -140,9 +140,10 @@ impl StringValue {
         match chars.next() {
             None => StringValue::empty(),
             Some(first) => {
-                let capitalized = first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase();
+                let capitalized =
+                    first.to_uppercase().collect::<String>() + &chars.as_str().to_lowercase();
                 StringValue::new(capitalized)
-            }
+            },
         }
     }
 
@@ -186,17 +187,13 @@ impl StringValue {
     /// Removes prefix if present
     #[must_use = "the optional new string should be used"]
     pub fn strip_prefix(&self, prefix: &str) -> Option<StringValue> {
-        self.0
-            .strip_prefix(prefix)
-            .map(|s| StringValue::new(s.to_string()))
+        self.0.strip_prefix(prefix).map(|s| StringValue::new(s.to_string()))
     }
 
     /// Removes suffix if present
     #[must_use = "the optional new string should be used"]
     pub fn strip_suffix(&self, suffix: &str) -> Option<StringValue> {
-        self.0
-            .strip_suffix(suffix)
-            .map(|s| StringValue::new(s.to_string()))
+        self.0.strip_suffix(suffix).map(|s| StringValue::new(s.to_string()))
     }
 
     /// Replaces all matches of a pattern with another string
@@ -216,28 +213,19 @@ impl StringValue {
     /// Splits the string by a pattern and returns a vector of StringValues
     #[must_use = "the vector of split strings should be used"]
     pub fn split(&self, pattern: &str) -> Vec<StringValue> {
-        self.0
-            .split(pattern)
-            .map(|s| StringValue::new(s.to_string()))
-            .collect()
+        self.0.split(pattern).map(|s| StringValue::new(s.to_string())).collect()
     }
 
     /// Splits by whitespace
     #[must_use = "the vector of split strings should be used"]
     pub fn split_whitespace(&self) -> Vec<StringValue> {
-        self.0
-            .split_whitespace()
-            .map(|s| StringValue::new(s.to_string()))
-            .collect()
+        self.0.split_whitespace().map(|s| StringValue::new(s.to_string())).collect()
     }
 
     /// Splits into lines
     #[must_use]
     pub fn lines(&self) -> Vec<StringValue> {
-        self.0
-            .lines()
-            .map(|s| StringValue::new(s.to_string()))
-            .collect()
+        self.0.lines().map(|s| StringValue::new(s.to_string())).collect()
     }
 
     // --- Substring and Character Access ---
@@ -262,22 +250,13 @@ impl StringValue {
         }
 
         let mut chars = self.0.char_indices();
-        let start_byte = if start == 0 {
-            0
-        } else {
-            chars
-                .nth(start)
-                .map(|(i, _)| i)
-                .unwrap_or(self.0.len())
-        };
+        let start_byte =
+            if start == 0 { 0 } else { chars.nth(start).map(|(i, _)| i).unwrap_or(self.0.len()) };
 
         let end_byte = if end == char_count {
             self.0.len()
         } else {
-            chars
-                .nth(end.saturating_sub(start + 1))
-                .map(|(i, _)| i)
-                .unwrap_or(self.0.len())
+            chars.nth(end.saturating_sub(start + 1)).map(|(i, _)| i).unwrap_or(self.0.len())
         };
 
         Ok(StringValue::new(self.0[start_byte..end_byte].to_string()))
@@ -334,9 +313,7 @@ impl StringValue {
         T: FromStr,
         T::Err: std::fmt::Display,
     {
-        self.0
-            .parse::<T>()
-            .map_err(|e| ValueError::custom(format!("Parse error: {}", e)))
+        self.0.parse::<T>().map_err(|e| ValueError::custom(format!("Parse error: {}", e)))
     }
 
     /// Explicit parse with type annotation (alias for parse)
@@ -587,10 +564,7 @@ impl TryFrom<serde_json::Value> for StringValue {
     fn try_from(value: serde_json::Value) -> ValueResult<Self> {
         match value {
             serde_json::Value::String(s) => Ok(StringValue::new(s)),
-            other => Err(ValueError::custom(format!(
-                "Cannot convert {:?} to StringValue",
-                other
-            ))),
+            other => Err(ValueError::custom(format!("Cannot convert {:?} to StringValue", other))),
         }
     }
 }
