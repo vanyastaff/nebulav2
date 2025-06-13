@@ -1,7 +1,4 @@
-// crates/nebula_core/src/value/error.rs
-
 use thiserror::Error;
-use crate::error::{ErrorSeverity, HasSeverity};
 
 /// Errors that can occur when working with Value types
 #[derive(Debug, Error, Clone, PartialEq)]
@@ -14,7 +11,7 @@ pub enum ValueError {
     #[error("Invalid number format: {input}")]
     InvalidNumber { input: String },
 
-    /// Number out of valid range
+    /// Number out of valid ranges
     #[error("Number out of range: {value} (valid range: {min}..={max})")]
     NumberOutOfRange {
         value: String,
@@ -25,7 +22,8 @@ pub enum ValueError {
     /// Division by zero
     #[error("Division by zero")]
     DivisionByZero,
-    
+
+    /// Invalid boolean format
     #[error("Invalid boolean: {input}")]
     InvalidBoolean { input: String },
 
@@ -44,6 +42,14 @@ pub enum ValueError {
     /// Invalid duration format
     #[error("Invalid duration format: {input}")]
     InvalidDuration { input: String },
+
+    /// Invalid color format
+    #[error("Invalid color format: {input}")]
+    InvalidColor { input: String },
+
+    /// Invalid cron expression
+    #[error("Invalid cron expression: {input}")]
+    InvalidCron { input: String },
 
     /// Invalid expression syntax
     #[error("Invalid expression syntax: {input} - {reason}")]
@@ -93,11 +99,13 @@ pub enum ValueError {
     #[error("Binary data encoding failed: {reason}")]
     BinaryEncodingFailed { reason: String },
 
-    /// JSON serialization error
+    /// JSON serialization error (feature-gated)
+    #[cfg(feature = "json")]
     #[error("JSON serialization failed: {reason}")]
     JsonSerialization { reason: String },
 
-    /// JSON deserialization error
+    /// JSON deserialization error (feature-gated)
+    #[cfg(feature = "json")]
     #[error("JSON deserialization failed: {reason}")]
     JsonDeserialization { reason: String },
 
@@ -122,6 +130,14 @@ pub enum ValueError {
     /// Custom validation error
     #[error("Validation failed: {reason}")]
     ValidationFailed { reason: String },
+
+    /// File operation error
+    #[error("File operation failed: {reason}")]
+    FileOperationFailed { reason: String },
+
+    /// Mode parameter error
+    #[error("Mode parameter error: {reason}")]
+    ModeParameterError { reason: String },
 
     /// Generic custom error
     #[error("{message}")]
@@ -189,7 +205,7 @@ impl ValueError {
     pub fn key_not_found(key: impl Into<String>) -> Self {
         Self::KeyNotFound { key: key.into() }
     }
-    
+
     /// Invalid boolean error
     pub fn invalid_boolean(input: impl Into<String>) -> Self {
         Self::InvalidBoolean {
@@ -256,14 +272,44 @@ impl ValueError {
         }
     }
 
-    /// Creates a JSON serialization error
+    /// Creates an invalid color error
+    pub fn invalid_color(input: impl Into<String>) -> Self {
+        Self::InvalidColor {
+            input: input.into(),
+        }
+    }
+
+    /// Creates an invalid cron error
+    pub fn invalid_cron(input: impl Into<String>) -> Self {
+        Self::InvalidCron {
+            input: input.into(),
+        }
+    }
+
+    /// Creates a file operation error
+    pub fn file_operation_failed(reason: impl Into<String>) -> Self {
+        Self::FileOperationFailed {
+            reason: reason.into(),
+        }
+    }
+
+    /// Creates a mode parameter error
+    pub fn mode_parameter_error(reason: impl Into<String>) -> Self {
+        Self::ModeParameterError {
+            reason: reason.into(),
+        }
+    }
+
+    /// Creates a JSON serialization error (feature-gated)
+    #[cfg(feature = "json")]
     pub fn json_serialization(reason: impl Into<String>) -> Self {
         Self::JsonSerialization {
             reason: reason.into(),
         }
     }
 
-    /// Creates a JSON deserialization error
+    /// Creates a JSON deserialization error (feature-gated)
+    #[cfg(feature = "json")]
     pub fn json_deserialization(reason: impl Into<String>) -> Self {
         Self::JsonDeserialization {
             reason: reason.into(),
@@ -330,6 +376,7 @@ impl From<base64::DecodeError> for ValueError {
     }
 }
 
+#[cfg(feature = "json")]
 impl From<serde_json::Error> for ValueError {
     fn from(err: serde_json::Error) -> Self {
         if err.is_syntax() || err.is_data() {
@@ -340,99 +387,6 @@ impl From<serde_json::Error> for ValueError {
             Self::JsonSerialization {
                 reason: err.to_string(),
             }
-        }
-    }
-}
-
-// Helper trait for easy error conversion
-pub trait ValueErrorExt<T> {
-    /// Converts a Result to ValueError with custom context
-    fn with_value_context(self, context: &str) -> Result<T, ValueError>;
-
-    /// Converts a Result to ValueError with type conversion context
-    fn with_conversion_context(self, from_type: &str, to_type: &str) -> Result<T, ValueError>;
-}
-
-impl<T, E> ValueErrorExt<T> for Result<T, E>
-where
-    E: std::error::Error,
-{
-    fn with_value_context(self, context: &str) -> Result<T, ValueError> {
-        self.map_err(|e| ValueError::custom(format!("{}: {}", context, e)))
-    }
-
-    fn with_conversion_context(self, from_type: &str, to_type: &str) -> Result<T, ValueError> {
-        self.map_err(|_| ValueError::type_conversion(from_type, to_type))
-    }
-}
-
-impl HasSeverity for ValueError {
-    fn severity(&self) -> ErrorSeverity {
-        match self {
-            // Critical errors - system cannot function
-            ValueError::DivisionByZero => ErrorSeverity::Critical,
-            ValueError::IndexOutOfBounds { .. } => ErrorSeverity::Critical,
-            ValueError::InvalidUtf8 { .. } => ErrorSeverity::Critical,
-
-            // Regular errors - operation failed
-            ValueError::InvalidRegex { .. } => ErrorSeverity::Error,
-            ValueError::InvalidNumber { .. } => ErrorSeverity::Error,
-            ValueError::NumberOutOfRange { .. } => ErrorSeverity::Error,
-            ValueError::InvalidDate { .. } => ErrorSeverity::Error,
-            ValueError::InvalidTime { .. } => ErrorSeverity::Error,
-            ValueError::InvalidDateTime { .. } => ErrorSeverity::Error,
-            ValueError::InvalidDuration { .. } => ErrorSeverity::Error,
-            ValueError::TypeConversion { .. } => ErrorSeverity::Error,
-            ValueError::TypeConversionWithValue { .. } => ErrorSeverity::Error,
-            ValueError::KeyNotFound { .. } => ErrorSeverity::Error,
-            ValueError::InvalidEnumVariant { .. } => ErrorSeverity::Error,
-            ValueError::BinaryDecodingFailed { .. } => ErrorSeverity::Error,
-            ValueError::BinaryEncodingFailed { .. } => ErrorSeverity::Error,
-            ValueError::JsonSerialization { .. } => ErrorSeverity::Error,
-            ValueError::JsonDeserialization { .. } => ErrorSeverity::Error,
-            ValueError::InvalidFormat { .. } => ErrorSeverity::Error,
-            ValueError::UnsupportedOperation { .. } => ErrorSeverity::Error,
-            ValueError::IncompatibleComparison { .. } => ErrorSeverity::Error,
-            ValueError::ValidationFailed { .. } => ErrorSeverity::Error,
-
-            // Warnings - something unexpected but can continue
-            ValueError::InvalidExpression { .. } => ErrorSeverity::Warning,
-            ValueError::ExpressionVariableNotFound { .. } => ErrorSeverity::Warning,
-            ValueError::ExpressionEvaluationFailed { .. } => ErrorSeverity::Warning,
-
-            // Custom errors - severity depends on context, default to Error
-            ValueError::Custom { .. } => ErrorSeverity::Error,
-        }
-    }
-
-    fn error_code(&self) -> &'static str {
-        match self {
-            ValueError::InvalidRegex { .. } => "VALUE_INVALID_REGEX",
-            ValueError::InvalidNumber { .. } => "VALUE_INVALID_NUMBER",
-            ValueError::NumberOutOfRange { .. } => "VALUE_NUMBER_OUT_OF_RANGE",
-            ValueError::DivisionByZero => "VALUE_DIVISION_BY_ZERO",
-            ValueError::InvalidDate { .. } => "VALUE_INVALID_DATE",
-            ValueError::InvalidTime { .. } => "VALUE_INVALID_TIME",
-            ValueError::InvalidDateTime { .. } => "VALUE_INVALID_DATETIME",
-            ValueError::InvalidDuration { .. } => "VALUE_INVALID_DURATION",
-            ValueError::InvalidExpression { .. } => "VALUE_INVALID_EXPRESSION",
-            ValueError::ExpressionVariableNotFound { .. } => "VALUE_EXPRESSION_VAR_NOT_FOUND",
-            ValueError::ExpressionEvaluationFailed { .. } => "VALUE_EXPRESSION_EVAL_FAILED",
-            ValueError::TypeConversion { .. } => "VALUE_TYPE_CONVERSION",
-            ValueError::TypeConversionWithValue { .. } => "VALUE_TYPE_CONVERSION_WITH_VALUE",
-            ValueError::IndexOutOfBounds { .. } => "VALUE_INDEX_OUT_OF_BOUNDS",
-            ValueError::KeyNotFound { .. } => "VALUE_KEY_NOT_FOUND",
-            ValueError::InvalidEnumVariant { .. } => "VALUE_INVALID_ENUM_VARIANT",
-            ValueError::InvalidUtf8 { .. } => "VALUE_INVALID_UTF8",
-            ValueError::BinaryDecodingFailed { .. } => "VALUE_BINARY_DECODE_FAILED",
-            ValueError::BinaryEncodingFailed { .. } => "VALUE_BINARY_ENCODE_FAILED",
-            ValueError::JsonSerialization { .. } => "VALUE_JSON_SERIALIZATION",
-            ValueError::JsonDeserialization { .. } => "VALUE_JSON_DESERIALIZATION",
-            ValueError::InvalidFormat { .. } => "VALUE_INVALID_FORMAT",
-            ValueError::UnsupportedOperation { .. } => "VALUE_UNSUPPORTED_OPERATION",
-            ValueError::IncompatibleComparison { .. } => "VALUE_INCOMPATIBLE_COMPARISON",
-            ValueError::ValidationFailed { .. } => "VALUE_VALIDATION_FAILED",
-            ValueError::Custom { .. } => "VALUE_CUSTOM",
         }
     }
 }
@@ -453,7 +407,13 @@ mod tests {
         assert!(matches!(err, ValueError::TypeConversion { .. }));
 
         let err = ValueError::index_out_of_bounds(5, 3);
-        assert!(matches!(err, ValueError::IndexOutOfBounds { index: 5, length: 3 }));
+        assert!(matches!(
+            err,
+            ValueError::IndexOutOfBounds {
+                index: 5,
+                length: 3
+            }
+        ));
     }
 
     #[test]
@@ -479,18 +439,6 @@ mod tests {
     }
 
     #[test]
-    fn test_value_error_ext() {
-        let result: Result<i32, std::num::ParseIntError> = "abc".parse();
-        let value_result = result.with_conversion_context("string", "integer");
-
-        assert!(value_result.is_err());
-        if let Err(ValueError::TypeConversion { from_type, to_type }) = value_result {
-            assert_eq!(from_type, "string");
-            assert_eq!(to_type, "integer");
-        }
-    }
-
-    #[test]
     fn test_error_equality() {
         let err1 = ValueError::custom("test");
         let err2 = ValueError::custom("test");
@@ -498,5 +446,27 @@ mod tests {
 
         assert_eq!(err1, err2);
         assert_ne!(err1, err3);
+    }
+
+    #[cfg(feature = "json")]
+    #[test]
+    fn test_json_errors() {
+        let err = ValueError::json_serialization("test error");
+        assert!(matches!(err, ValueError::JsonSerialization { .. }));
+    }
+
+    #[test]
+    fn test_new_error_types() {
+        let color_err = ValueError::invalid_color("#invalid");
+        assert!(matches!(color_err, ValueError::InvalidColor { .. }));
+
+        let cron_err = ValueError::invalid_cron("* * * * *");
+        assert!(matches!(cron_err, ValueError::InvalidCron { .. }));
+
+        let file_err = ValueError::file_operation_failed("Cannot read file");
+        assert!(matches!(file_err, ValueError::FileOperationFailed { .. }));
+
+        let mode_err = ValueError::mode_parameter_error("Invalid mode");
+        assert!(matches!(mode_err, ValueError::ModeParameterError { .. }));
     }
 }

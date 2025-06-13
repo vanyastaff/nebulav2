@@ -1,11 +1,10 @@
 use super::Value;
-use derive_more::{Deref, DerefMut};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Display;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default, Deref, DerefMut)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Default)]
 pub struct GroupValue(IndexMap<String, Value>);
 
 impl From<HashMap<String, Value>> for GroupValue {
